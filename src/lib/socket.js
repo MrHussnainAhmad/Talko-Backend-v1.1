@@ -7,49 +7,10 @@ const server = http.createServer(app);
 
 const io = new Server(server, {
   cors: {
-    origin: function (origin, callback) {
-      console.log('Socket.IO CORS Origin:', origin); // Debug log
-      
-      // Allow requests with no origin (like mobile apps)
-      if (!origin) return callback(null, true);
-      
-      const allowedOrigins = process.env.NODE_ENV === "production" 
-        ? [
-            "https://talko-yourprivatechat.netlify.app",
-            "https://talko.up.railway.app"
-          ] 
-        : [
-            "http://localhost:5173", 
-            "http://localhost:5174",
-            "http://127.0.0.1:5173",
-            "http://127.0.0.1:5174"
-          ];
-      
-      if (allowedOrigins.includes(origin)) {
-        console.log('✅ Socket CORS allowed for:', origin);
-        callback(null, true);
-      } else {
-        console.log('❌ Socket CORS blocked origin:', origin);
-        callback(new Error('Not allowed by CORS'));
-      }
-    },
+    origin: ["http://localhost:5173"],
     methods: ["GET", "POST"],
     credentials: true,
-    allowedHeaders: ["Content-Type", "Authorization"],
   },
-  // Enhanced Socket.IO configuration for Railway
-  transports: ['websocket', 'polling'],
-  allowEIO3: true,
-  pingTimeout: 60000,
-  pingInterval: 25000,
-  upgradeTimeout: 30000,
-  maxHttpBufferSize: 1e6, // 1MB
-  allowRequest: (req, callback) => {
-    // Additional security check
-    const origin = req.headers.origin;
-    console.log('Socket allowRequest check for origin:', origin);
-    callback(null, true); // Allow all for now, CORS will handle filtering
-  }
 });
 
 const userSocketMap = {}; // {userId: socketId}
@@ -59,56 +20,125 @@ export const getReceiverSocketId = (receiverId) => {
 };
 
 io.on("connection", (socket) => {
-  console.log("✅ A user connected:", socket.id);
+  console.log("A user connected: " + socket.id);
   
   const userId = socket.handshake.query.userId;
-  console.log("User ID from handshake:", userId);
-  
-  if (userId && userId !== "undefined" && userId !== "null") {
+  if (userId && userId !== "undefined") {
     userSocketMap[userId] = socket.id;
-    console.log("✅ User mapped:", userId, "->", socket.id);
-  } else {
-    console.log("⚠️ Invalid userId in handshake:", userId);
+    console.log(`User ${userId} connected with socket ${socket.id}`);
   }
 
-  // Emit online users to all connected clients
-  const onlineUsers = Object.keys(userSocketMap);
-  console.log("📡 Broadcasting online users:", onlineUsers);
-  io.emit("getOnlineUsers", onlineUsers);
+  // Send list of online users to all connected clients
+  io.emit("getOnlineUsers", Object.keys(userSocketMap));
 
-  socket.on("disconnect", (reason) => {
-    console.log("❌ User disconnected:", socket.id, "Reason:", reason);
+  // Handle friend request events
+  socket.on("friendRequestSent", (data) => {
+    const receiverSocketId = getReceiverSocketId(data.receiverId);
+    if (receiverSocketId) {
+      console.log(`Sending friend request notification to user ${data.receiverId}`);
+      io.to(receiverSocketId).emit("newFriendRequest", {
+        request: data.request,
+        message: "You have a new friend request"
+      });
+    }
+  });
+
+  // Handle friend request acceptance
+  socket.on("friendRequestAccepted", (data) => {
+    const senderSocketId = getReceiverSocketId(data.senderId);
+    if (senderSocketId) {
+      console.log(`Notifying user ${data.senderId} that their friend request was accepted`);
+      io.to(senderSocketId).emit("friendRequestAccepted", {
+        friendId: data.friendId,
+        message: `${data.accepterName} accepted your friend request`
+      });
+    }
+  });
+
+  // Handle friend request rejection
+  socket.on("friendRequestRejected", (data) => {
+    const senderSocketId = getReceiverSocketId(data.senderId);
+    if (senderSocketId) {
+      console.log(`Notifying user ${data.senderId} that their friend request was rejected`);
+      io.to(senderSocketId).emit("friendRequestRejected", {
+        friendId: data.friendId,
+        message: `Your friend request was declined`
+      });
+    }
+  });
+
+  // Handle friend removal
+  socket.on("friendRemoved", (data) => {
+    const friendSocketId = getReceiverSocketId(data.friendId);
+    if (friendSocketId) {
+      console.log(`Notifying user ${data.friendId} that they were removed as a friend`);
+      io.to(friendSocketId).emit("friendRemoved", {
+        userId: data.userId,
+        message: "A friend has removed you from their friend list"
+      });
+    }
+  });
+
+  // Handle typing indicators for messages
+  socket.on("typing", (data) => {
+    const receiverSocketId = getReceiverSocketId(data.receiverId);
+    if (receiverSocketId) {
+      io.to(receiverSocketId).emit("userTyping", {
+        senderId: data.senderId,
+        senderName: data.senderName
+      });
+    }
+  });
+
+  socket.on("stopTyping", (data) => {
+    const receiverSocketId = getReceiverSocketId(data.receiverId);
+    if (receiverSocketId) {
+      io.to(receiverSocketId).emit("userStoppedTyping", {
+        senderId: data.senderId
+      });
+    }
+  });
+
+  // Handle user going online/offline status updates
+  socket.on("userOnline", (userId) => {
+    if (userId && userId !== "undefined") {
+      userSocketMap[userId] = socket.id;
+      console.log(`User ${userId} is now online`);
+      // Broadcast to all users that this user is online
+      socket.broadcast.emit("userStatusUpdate", {
+        userId: userId,
+        isOnline: true
+      });
+    }
+  });
+
+  socket.on("disconnect", () => {
+    console.log("User disconnected: " + socket.id);
     
-    // Find and remove user from map
-    for (const [uid, socketId] of Object.entries(userSocketMap)) {
-      if (socketId === socket.id) {
-        delete userSocketMap[uid];
-        console.log("🗑️ Removed user from map:", uid);
-        break;
-      }
+    // Find and remove the user from the socket map
+    const disconnectedUserId = Object.keys(userSocketMap).find(
+      key => userSocketMap[key] === socket.id
+    );
+    
+    if (disconnectedUserId) {
+      delete userSocketMap[disconnectedUserId];
+      console.log(`User ${disconnectedUserId} went offline`);
+      
+      // Broadcast to all users that this user is offline
+      socket.broadcast.emit("userStatusUpdate", {
+        userId: disconnectedUserId,
+        isOnline: false
+      });
     }
     
-    // Emit updated online users
-    const onlineUsers = Object.keys(userSocketMap);
-    console.log("📡 Broadcasting updated online users:", onlineUsers);
-    io.emit("getOnlineUsers", onlineUsers);
+    // Send updated online users list
+    io.emit("getOnlineUsers", Object.keys(userSocketMap));
   });
 
-  // Handle connection errors
+  // Handle errors
   socket.on("error", (error) => {
-    console.error("❌ Socket error for", socket.id, ":", error);
+    console.error("Socket error:", error);
   });
-
-  // Handle custom events
-  socket.on("ping", () => {
-    console.log("🏓 Ping received from", socket.id);
-    socket.emit("pong");
-  });
-});
-
-// Handle server-level errors
-io.engine.on("connection_error", (err) => {
-  console.error("❌ Socket.IO connection error:", err.req, err.code, err.message, err.context);
 });
 
 export { io, app, server };

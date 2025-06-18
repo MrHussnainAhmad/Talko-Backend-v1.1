@@ -1,31 +1,73 @@
-/**
- * This backend is Created by Hussnain Ahmad, You can check full app on github at: 'https://github.com/MrHussnainAhmad/'
- */
 import jwt from "jsonwebtoken";
 
 export const genToken = (userId, res) => {
-  console.log('🔑 Generating token for user:', userId);
-  
-  if (!process.env.JWT_SECRET) {
-    console.error('❌ JWT_SECRET is not defined');
-    throw new Error('JWT_SECRET is not configured');
-  }
-  
   const token = jwt.sign({ userId }, process.env.JWT_SECRET, {
     expiresIn: "7d",
   });
 
-  const cookieOptions = {
-    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+  res.cookie("token", token, {
+    maxAge: 7 * 24 * 60 * 60 * 1000,
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production", // Use secure cookies in production
-    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax", // Allow cross-site cookies in production
-  };
+    secure: false,
+    sameSite: "lax",
+    domain: "localhost"
+  });
 
-  console.log('🍪 Setting cookie with options:', cookieOptions);
-  
-  res.cookie("token", token, cookieOptions);
-
-  console.log('✅ Token generated and cookie set');
   return token;
+};
+
+export const validateObjectId = (id) => {
+  return /^[0-9a-fA-F]{24}$/.test(id);
+};
+
+export const formatUserResponse = (user) => {
+  return {
+    _id: user._id,
+    id: user._id,
+    fullname: user.fullname,
+    username: user.username,
+    email: user.email,
+    profilePic: user.profilePic,
+    friends: user.friends || [],
+    createdAt: user.createdAt,
+    updatedAt: user.updatedAt
+  };
+};
+
+export const formatFriendRequestResponse = (request) => {
+  return {
+    _id: request._id,
+    senderId: request.senderId,
+    receiverId: request.receiverId,
+    message: request.message,
+    status: request.status,
+    createdAt: request.createdAt,
+    updatedAt: request.updatedAt
+  };
+};
+
+export const handleAsyncError = (asyncFn) => {
+  return (req, res, next) => {
+    Promise.resolve(asyncFn(req, res, next)).catch(next);
+  };
+};
+
+export const sendResponse = (res, statusCode, data, message = null) => {
+  const response = {
+    success: statusCode < 400,
+    ...(message && { message }),
+    ...(data && { data })
+  };
+  
+  return res.status(statusCode).json(response);
+};
+
+export const sendError = (res, statusCode, message, error = null) => {
+  const response = {
+    success: false,
+    message,
+    ...(process.env.NODE_ENV === 'development' && error && { error: error.message })
+  };
+  
+  return res.status(statusCode).json(response);
 };
