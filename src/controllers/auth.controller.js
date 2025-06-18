@@ -2,12 +2,16 @@ import User from "../models/User.model.js";
 import bcrypt from "bcryptjs";
 import { genToken } from "../lib/utils.js";
 import cloudinary from "../lib/cloudinary.js";
+import { connectDB } from "../lib/db.js";
 
 //signup controller
 export const signup = async (req, res) => {
   const { fullname, username, email, password } = req.body;
 
   try {
+    // Ensure database connection
+    await connectDB();
+
     //Checking Password Length
     if (password.length < 6) {
       return res
@@ -51,6 +55,14 @@ export const signup = async (req, res) => {
     }
   } catch (error) {
     console.error("Signup error:", error);
+    
+    // Handle specific timeout errors
+    if (error.message.includes('timeout') || error.message.includes('buffering timed out')) {
+      return res.status(503).json({ 
+        message: 'Database connection timeout. Please try again.' 
+      });
+    }
+    
     res.status(500).json({ message: "Internal server error" });
   }
 };
@@ -60,19 +72,45 @@ export const login = async (req, res) => {
   const { email, password } = req.body;
 
   try {
+    console.log('🔐 Login attempt for:', email);
+    
+    // Ensure database connection
+    await connectDB();
+    console.log('✅ Database connected for login');
+
+    // Validate input
+    if (!email || !password) {
+      return res.status(400).json({ 
+        message: 'Email and password are required' 
+      });
+    }
+
     //checking user - need to explicitly select password since it's excluded by default
-    const user = await User.findOne({ email }).select("+password");
+    const user = await Promise.race([
+      User.findOne({ email }).select("+password"),
+      new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Database query timeout')), 10000)
+      )
+    ]);
+    
     if (!user) {
       return res.status(400).json({ message: "Email not found" });
     }
+
+    console.log('✅ User found');
 
     //checking pass
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(400).json({ message: "Invalid password" });
     }
+    
+    console.log('✅ Password valid');
+    
     //Generate token
     genToken(user._id, res);
+
+    console.log('✅ Login successful');
 
     res.status(200).json({
       id: user._id,
@@ -82,7 +120,16 @@ export const login = async (req, res) => {
       profilePic: user.profilePic,
     });
   } catch (error) {
-    console.error("Login error:", error);
+    console.error("❌ Login error:", error.message);
+    console.error("Error stack:", error.stack);
+    
+    // Handle specific timeout errors
+    if (error.message.includes('timeout') || error.message.includes('buffering timed out')) {
+      return res.status(503).json({ 
+        message: 'Database connection timeout. Please try again.' 
+      });
+    }
+    
     res.status(500).json({ message: "Internal server error" });
   }
 };
@@ -103,6 +150,9 @@ export const logout = (req, res) => {
 //Profile update controller
 export const updateProfile = async (req, res) => {
   try {
+    // Ensure database connection
+    await connectDB();
+    
     const { profilePic } = req.body;
     const userId = req.user._id;
 
@@ -123,12 +173,20 @@ export const updateProfile = async (req, res) => {
       .json({ updatedUser, message: "Profile picture updated successfully" });
   } catch (error) {
     console.error("Profile update error:", error);
+    
+    // Handle specific timeout errors
+    if (error.message.includes('timeout') || error.message.includes('buffering timed out')) {
+      return res.status(503).json({ 
+        message: 'Database connection timeout. Please try again.' 
+      });
+    }
+    
     res.status(500).json({ message: "Internal server error" });
   }
 };
 
 //checkAuth controller
-export const checkAuth = (req, res) => {
+export const checkAuth = async (req, res) => {
   try {
     res.status(200).json(req.user);
   } catch (error) {
