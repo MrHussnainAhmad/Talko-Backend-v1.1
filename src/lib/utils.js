@@ -12,7 +12,7 @@ export const genToken = (userId, res) => {
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     httpOnly: true,
     secure: process.env.NODE_ENV === "production", // Use secure cookies in production
-    sameSite: "strict", // Helps prevent CSRF attacks
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax", // Allow cross-site cookies in production
   });
 
   return token;
