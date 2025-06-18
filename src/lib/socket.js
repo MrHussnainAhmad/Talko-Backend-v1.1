@@ -8,6 +8,8 @@ const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
     origin: function (origin, callback) {
+      console.log('Socket.IO CORS Origin:', origin); // Debug log
+      
       // Allow requests with no origin (like mobile apps)
       if (!origin) return callback(null, true);
       
@@ -24,9 +26,10 @@ const io = new Server(server, {
           ];
       
       if (allowedOrigins.includes(origin)) {
+        console.log('✅ Socket CORS allowed for:', origin);
         callback(null, true);
       } else {
-        console.log('Socket blocked origin:', origin);
+        console.log('❌ Socket CORS blocked origin:', origin);
         callback(new Error('Not allowed by CORS'));
       }
     },
@@ -34,11 +37,19 @@ const io = new Server(server, {
     credentials: true,
     allowedHeaders: ["Content-Type", "Authorization"],
   },
-  // Additional Socket.IO configuration for Railway
+  // Enhanced Socket.IO configuration for Railway
   transports: ['websocket', 'polling'],
   allowEIO3: true,
   pingTimeout: 60000,
   pingInterval: 25000,
+  upgradeTimeout: 30000,
+  maxHttpBufferSize: 1e6, // 1MB
+  allowRequest: (req, callback) => {
+    // Additional security check
+    const origin = req.headers.origin;
+    console.log('Socket allowRequest check for origin:', origin);
+    callback(null, true); // Allow all for now, CORS will handle filtering
+  }
 });
 
 const userSocketMap = {}; // {userId: socketId}
@@ -48,26 +59,56 @@ export const getReceiverSocketId = (receiverId) => {
 };
 
 io.on("connection", (socket) => {
-  console.log("A user connected: " + socket.id);
+  console.log("✅ A user connected:", socket.id);
   
   const userId = socket.handshake.query.userId;
-  if (userId !== "undefined") {
+  console.log("User ID from handshake:", userId);
+  
+  if (userId && userId !== "undefined" && userId !== "null") {
     userSocketMap[userId] = socket.id;
+    console.log("✅ User mapped:", userId, "->", socket.id);
+  } else {
+    console.log("⚠️ Invalid userId in handshake:", userId);
   }
 
-  // io.emit() is used to send events to all the connected clients
-  io.emit("getOnlineUsers", Object.keys(userSocketMap));
+  // Emit online users to all connected clients
+  const onlineUsers = Object.keys(userSocketMap);
+  console.log("📡 Broadcasting online users:", onlineUsers);
+  io.emit("getOnlineUsers", onlineUsers);
 
-  socket.on("disconnect", () => {
-    console.log("User disconnected: " + socket.id);
-    delete userSocketMap[userId];
-    io.emit("getOnlineUsers", Object.keys(userSocketMap));
+  socket.on("disconnect", (reason) => {
+    console.log("❌ User disconnected:", socket.id, "Reason:", reason);
+    
+    // Find and remove user from map
+    for (const [uid, socketId] of Object.entries(userSocketMap)) {
+      if (socketId === socket.id) {
+        delete userSocketMap[uid];
+        console.log("🗑️ Removed user from map:", uid);
+        break;
+      }
+    }
+    
+    // Emit updated online users
+    const onlineUsers = Object.keys(userSocketMap);
+    console.log("📡 Broadcasting updated online users:", onlineUsers);
+    io.emit("getOnlineUsers", onlineUsers);
   });
 
   // Handle connection errors
   socket.on("error", (error) => {
-    console.error("Socket error:", error);
+    console.error("❌ Socket error for", socket.id, ":", error);
   });
+
+  // Handle custom events
+  socket.on("ping", () => {
+    console.log("🏓 Ping received from", socket.id);
+    socket.emit("pong");
+  });
+});
+
+// Handle server-level errors
+io.engine.on("connection_error", (err) => {
+  console.error("❌ Socket.IO connection error:", err.req, err.code, err.message, err.context);
 });
 
 export { io, app, server };
