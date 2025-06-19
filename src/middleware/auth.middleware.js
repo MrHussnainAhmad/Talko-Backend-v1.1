@@ -3,14 +3,17 @@ import User from "../models/User.model.js";
 
 export const protectRoute = async (req, res, next) => {
   try {
+    console.log("Cookies received:", req.cookies);
     const token = req.cookies.token;
 
     if (!token) {
+      console.log("No token found in cookies");
       return res.status(401).json({ message: "Unauthorized!" });
     }
 
+    console.log("Token found, verifying...");
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    // Remove the (!decoded) check - jwt.verify throws on invalid tokens
+    console.log("Token decoded:", decoded);
 
     const user = await User.findById(decoded.userId).select("-password");
     if (!user) {
@@ -20,8 +23,10 @@ export const protectRoute = async (req, res, next) => {
     req.user = user;
     next();
   } catch (error) {
-    console.error("Error in protectRoute middleware:", error);
-    // This will catch JWT verification errors and invalid tokens
-    return res.status(401).json({ message: "Unauthorized!" });
+    console.error("Error in protectRoute middleware:", error.message);
+    return res.status(401).json({ 
+      message: "Unauthorized!",
+      error: error.message
+    });
   }
 };

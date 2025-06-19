@@ -347,13 +347,12 @@ export const login = async (req, res) => {
     // Check if email is verified
     if (!user.isVerified) {
       return res.status(400).json({
-        message:
-          "Please verify your email before logging in. Check your email for verification link.",
+        message: "Please verify your email before logging in.",
         requiresVerification: true,
       });
     }
 
-    //Generate token
+    // Generate token AFTER verification check
     genToken(user._id, res);
 
     console.log("✅ Login successful");
@@ -485,10 +484,10 @@ export const checkAuth = async (req, res) => {
 // Delete account controller
 export const deleteAccount = async (req, res) => {
   const session = await mongoose.startSession();
-  
+
   try {
     console.log("🗑️ Account deletion request for user:", req.user._id);
-    
+
     // Ensure database connection
     await connectDB();
     console.log("✅ Database connected for account deletion");
@@ -496,7 +495,7 @@ export const deleteAccount = async (req, res) => {
     await session.withTransaction(async () => {
       const userId = req.user._id;
       const userEmail = req.user.email;
-      
+
       // Step 1: Update user data to show as deleted account
       await User.findByIdAndUpdate(
         userId,
@@ -510,7 +509,7 @@ export const deleteAccount = async (req, res) => {
           password: "", // Clear password
           friends: [], // Remove all friends
           isDeleted: true, // Add this field to mark as deleted
-          deletedAt: new Date()
+          deletedAt: new Date(),
         },
         { session }
       );
@@ -525,10 +524,7 @@ export const deleteAccount = async (req, res) => {
       // Step 3: Delete all friend requests involving this user
       await FriendRequest.deleteMany(
         {
-          $or: [
-            { senderId: userId },
-            { receiverId: userId }
-          ]
+          $or: [{ senderId: userId }, { receiverId: userId }],
         },
         { session }
       );
@@ -541,44 +537,45 @@ export const deleteAccount = async (req, res) => {
           $set: {
             senderName: "Talko User",
             senderProfilePic: "",
-            isDeleted: true
-          }
+            isDeleted: true,
+          },
         },
         { session }
       );
 
       // Step 5: Add system message about account deletion to all conversations
       const userConversations = await Message.distinct("conversationId", {
-        $or: [
-          { senderId: userId },
-          { receiverId: userId }
-        ]
+        $or: [{ senderId: userId }, { receiverId: userId }],
       });
 
       // Add deletion notification message to each conversation
       for (const conversationId of userConversations) {
-        const otherUserId = conversationId.split('-').find(id => id !== userId.toString());
+        const otherUserId = conversationId
+          .split("-")
+          .find((id) => id !== userId.toString());
         if (otherUserId) {
-          await Message.create([{
-            senderId: userId,
-            receiverId: otherUserId,
-            message: "User deleted their account!",
-            messageType: "system",
-            isSystemMessage: true,
-            conversationId: conversationId,
-            senderName: "Talko User",
-            senderProfilePic: "",
-            isDeleted: true,
-            createdAt: new Date()
-          }], { session });
+          await Message.create(
+            [
+              {
+                senderId: userId,
+                receiverId: otherUserId,
+                message: "User deleted their account!",
+                messageType: "system",
+                isSystemMessage: true,
+                conversationId: conversationId,
+                senderName: "Talko User",
+                senderProfilePic: "",
+                isDeleted: true,
+                createdAt: new Date(),
+              },
+            ],
+            { session }
+          );
         }
       }
 
       // Step 6: Delete email verification tokens
-      await eMailToken.deleteMany(
-        { userId: userId },
-        { session }
-      );
+      await eMailToken.deleteMany({ userId: userId }, { session });
 
       console.log("✅ Account deletion completed successfully");
     });
@@ -586,16 +583,16 @@ export const deleteAccount = async (req, res) => {
     // Step 7: Notify all connected users about the account deletion
     // Get all users who were friends with the deleted user
     const affectedUsers = await User.find({
-      friends: req.user._id
-    }).select('_id');
+      friends: req.user._id,
+    }).select("_id");
 
     // Emit socket events to notify friends about the deletion
-    affectedUsers.forEach(user => {
+    affectedUsers.forEach((user) => {
       const userSocketId = getReceiverSocketId(user._id.toString());
       if (userSocketId) {
         io.to(userSocketId).emit("userAccountDeleted", {
           deletedUserId: req.user._id,
-          message: "A user has deleted their account"
+          message: "A user has deleted their account",
         });
       }
     });
@@ -612,9 +609,8 @@ export const deleteAccount = async (req, res) => {
 
     res.status(200).json({
       message: "Account deleted successfully",
-      success: true
+      success: true,
     });
-
   } catch (error) {
     console.error("❌ Account deletion error:", error.message);
     console.error("Error stack:", error.stack);
@@ -629,9 +625,9 @@ export const deleteAccount = async (req, res) => {
       });
     }
 
-    res.status(500).json({ 
+    res.status(500).json({
       message: "Internal server error during account deletion",
-      success: false 
+      success: false,
     });
   } finally {
     await session.endSession();

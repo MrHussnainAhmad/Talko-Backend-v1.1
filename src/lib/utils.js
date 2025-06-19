@@ -7,19 +7,17 @@ export const genToken = (userId, res) => {
     expiresIn: "7d",
   });
 
+  const isProduction = process.env.NODE_ENV === "production";
+  
   res.cookie("token", token, {
     maxAge: 7 * 24 * 60 * 60 * 1000,
     httpOnly: true,
-    secure: false,
-    sameSite: "lax",
-    domain: "localhost"
+    secure: isProduction, // Use HTTPS in production
+    sameSite: isProduction ? "none" : "lax", // Required for cross-site cookies
+    domain: isProduction ? ".railway.app" : "localhost"
   });
 
   return token;
-};
-
-export const validateObjectId = (id) => {
-  return /^[0-9a-fA-F]{24}$/.test(id);
 };
 
 // UPDATED: Handle deleted accounts in user response
