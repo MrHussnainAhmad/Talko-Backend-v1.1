@@ -88,7 +88,7 @@ export const signup = async (req, res) => {
     console.log("✅ Email verification token saved");
 
     // Send verification email
-    const verificationUrl = `${process.env.BASE_URL}/api/auth/verify-email/${verificationToken}`;
+    const verificationUrl = `https://talko-private-chat.up.railway.app/api/auth/verify-email/${verificationToken}`;
     const emailSubject = "Email Verification";
     const emailText = `
       Hi ${fullname},
