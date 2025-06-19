@@ -107,11 +107,16 @@ export const sendMessage = async (req, res) => {
       }
     }
 
+    // Create conversationId using the static method
+    const conversationId = Message.createConversationId(senderId, receiverId);
+
     const newMessage = new Message({
       senderId,
       receiverId,
       text,
       image: imageUrl,
+      conversationId, // Add this required field
+      messageType: image ? 'image' : 'text', // Set appropriate message type
     });
 
     await newMessage.save();
