@@ -125,6 +125,8 @@ export const sendMessage = async (req, res) => {
     const receiverSocketId = getReceiverSocketId(receiverId);
     if (receiverSocketId) {
       io.to(receiverSocketId).emit("newMessage", newMessage);
+      // Emit messageReceived event for notification sound
+      io.to(receiverSocketId).emit("messageReceived", newMessage);
     }
 
     // Also emit to sender for confirmation (useful for multiple device scenarios)
