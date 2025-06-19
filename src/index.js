@@ -18,9 +18,9 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 app.use(cookieParser());
 
-// CORS configuration for local development
+// CORS configuration for production
 app.use(cors({
-  origin: "http://localhost:5173", // Vite frontend URL
+  origin: "https://talko-web-frontend-v1.vercel.app", // Production frontend URL
   credentials: true, // This allows cookies to be sent
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
@@ -38,6 +38,6 @@ app.get('/', (req, res) => {
 server.listen(PORT, () => {
   console.log(`🚀 Server is running on http://localhost:${PORT}`);
   console.log(`📡 Frontend should connect to: http://localhost:${PORT}`);
-  console.log(`🌐 CORS enabled for: http://localhost:5173`);
+  console.log(`🌐 CORS enabled for: https://talko-web-frontend-v1.vercel.app`);
   connectDB();
 });
