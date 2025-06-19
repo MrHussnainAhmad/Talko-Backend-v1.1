@@ -1,3 +1,5 @@
+// Updated User.model.js - Add these fields to your existing schema
+
 import mongoose from "mongoose";
 
 const userSchema = new mongoose.Schema(
@@ -9,7 +11,7 @@ const userSchema = new mongoose.Schema(
     username: {
       type: String,
       required: true,
-      unique: true, // Added unique constraint for username
+      unique: true,
     },
     email: {
       type: String,
@@ -20,26 +22,36 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: true,
       minlength: 6,
-      select: false, // Exclude password from queries by default
+      select: false,
     },
     profilePic: {
       type: String,
-      default: "", // Default profile picture URL
+      default: "",
     },
-    // Array to store friend IDs for faster friend queries
     friends: [{
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
     }],
-    // Optional: Add online status
     isOnline: {
       type: Boolean,
       default: false,
     },
-    // Optional: Last seen timestamp
     lastSeen: {
       type: Date,
       default: Date.now,
+    },
+    isVerified: {
+      type: Boolean,
+      default: false,
+    },
+    // NEW FIELDS FOR ACCOUNT DELETION
+    isDeleted: {
+      type: Boolean,
+      default: false,
+    },
+    deletedAt: {
+      type: Date,
+      default: null,
     },
   },
   {
@@ -47,16 +59,53 @@ const userSchema = new mongoose.Schema(
   }
 );
 
-// Index for faster friend queries
+// Existing indexes
 userSchema.index({ friends: 1 });
-
-// Index for username searches
 userSchema.index({ username: 1 });
-
-// Index for email searches
 userSchema.index({ email: 1 });
 
-// Method to add friend to friends array
+// NEW INDEX for deleted accounts
+userSchema.index({ isDeleted: 1 });
+
+// Updated method to check if user is deleted
+userSchema.methods.isAccountDeleted = function() {
+  return this.isDeleted === true;
+};
+
+// Method to get safe user data (for deleted accounts)
+userSchema.methods.getSafeUserData = function() {
+  if (this.isDeleted) {
+    return {
+      _id: this._id,
+      id: this._id,
+      fullname: "Talko User",
+      username: "", // Don't show username for deleted accounts
+      email: "", // Don't show email for deleted accounts
+      profilePic: "",
+      isOnline: false,
+      isDeleted: true,
+      friends: [],
+      createdAt: this.createdAt,
+      updatedAt: this.updatedAt
+    };
+  }
+  
+  return {
+    _id: this._id,
+    id: this._id,
+    fullname: this.fullname,
+    username: this.username,
+    email: this.email,
+    profilePic: this.profilePic,
+    isOnline: this.isOnline,
+    isDeleted: false,
+    friends: this.friends || [],
+    createdAt: this.createdAt,
+    updatedAt: this.updatedAt
+  };
+};
+
+// Existing methods
 userSchema.methods.addFriend = function(friendId) {
   if (!this.friends.includes(friendId)) {
     this.friends.push(friendId);
@@ -65,13 +114,11 @@ userSchema.methods.addFriend = function(friendId) {
   return Promise.resolve(this);
 };
 
-// Method to remove friend from friends array
 userSchema.methods.removeFriend = function(friendId) {
   this.friends = this.friends.filter(id => !id.equals(friendId));
   return this.save();
 };
 
-// Method to check if user is friends with another user
 userSchema.methods.isFriendsWith = function(userId) {
   return this.friends.some(friendId => friendId.equals(userId));
 };

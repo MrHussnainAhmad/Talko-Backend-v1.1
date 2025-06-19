@@ -14,7 +14,7 @@ const friendRequestSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["pending", "accepted", "rejected"],
+      enum: ["pending", "accepted"], // Removed "rejected" since we delete rejected requests
       default: "pending",
     },
     // Optional: Add a message field for the friend request
@@ -78,15 +78,22 @@ friendRequestSchema.statics.getFriends = async function (userId) {
   });
 };
 
-// Static method to check if friend request already exists
+// Updated static method to check if pending request exists (simplified)
 friendRequestSchema.statics.requestExists = async function (senderId, receiverId) {
   const existingRequest = await this.findOne({
     $or: [
-      { senderId: senderId, receiverId: receiverId },
-      { senderId: receiverId, receiverId: senderId },
+      { senderId: senderId, receiverId: receiverId, status: "pending" },
+      { senderId: receiverId, receiverId: senderId, status: "pending" },
     ],
   });
   return existingRequest;
+};
+
+// New static method to clean up old rejected requests (optional maintenance)
+friendRequestSchema.statics.cleanupRejectedRequests = async function () {
+  // This method can be called periodically to clean up any rejected requests
+  // that might still exist in the database from before this update
+  await this.deleteMany({ status: "rejected" });
 };
 
 const FriendRequest = mongoose.model("FriendRequest", friendRequestSchema);

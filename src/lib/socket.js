@@ -1,3 +1,5 @@
+// Updated socket.js - Add account deletion handling
+
 import { Server } from "socket.io";
 import http from "http";
 import express from "express";
@@ -28,58 +30,8 @@ io.on("connection", (socket) => {
     console.log(`User ${userId} connected with socket ${socket.id}`);
   }
 
-  // Send list of online users to all connected clients
   io.emit("getOnlineUsers", Object.keys(userSocketMap));
 
-  // Handle friend request events
-  socket.on("friendRequestSent", (data) => {
-    const receiverSocketId = getReceiverSocketId(data.receiverId);
-    if (receiverSocketId) {
-      console.log(`Sending friend request notification to user ${data.receiverId}`);
-      io.to(receiverSocketId).emit("newFriendRequest", {
-        request: data.request,
-        message: "You have a new friend request"
-      });
-    }
-  });
-
-  // Handle friend request acceptance
-  socket.on("friendRequestAccepted", (data) => {
-    const senderSocketId = getReceiverSocketId(data.senderId);
-    if (senderSocketId) {
-      console.log(`Notifying user ${data.senderId} that their friend request was accepted`);
-      io.to(senderSocketId).emit("friendRequestAccepted", {
-        friendId: data.friendId,
-        message: `${data.accepterName} accepted your friend request`
-      });
-    }
-  });
-
-  // Handle friend request rejection
-  socket.on("friendRequestRejected", (data) => {
-    const senderSocketId = getReceiverSocketId(data.senderId);
-    if (senderSocketId) {
-      console.log(`Notifying user ${data.senderId} that their friend request was rejected`);
-      io.to(senderSocketId).emit("friendRequestRejected", {
-        friendId: data.friendId,
-        message: `Your friend request was declined`
-      });
-    }
-  });
-
-  // Handle friend removal
-  socket.on("friendRemoved", (data) => {
-    const friendSocketId = getReceiverSocketId(data.friendId);
-    if (friendSocketId) {
-      console.log(`Notifying user ${data.friendId} that they were removed as a friend`);
-      io.to(friendSocketId).emit("friendRemoved", {
-        userId: data.userId,
-        message: "A friend has removed you from their friend list"
-      });
-    }
-  });
-
-  // Handle typing indicators for messages
   socket.on("typing", (data) => {
     const receiverSocketId = getReceiverSocketId(data.receiverId);
     if (receiverSocketId) {
@@ -99,12 +51,10 @@ io.on("connection", (socket) => {
     }
   });
 
-  // Handle user going online/offline status updates
   socket.on("userOnline", (userId) => {
     if (userId && userId !== "undefined") {
       userSocketMap[userId] = socket.id;
       console.log(`User ${userId} is now online`);
-      // Broadcast to all users that this user is online
       socket.broadcast.emit("userStatusUpdate", {
         userId: userId,
         isOnline: true
@@ -112,10 +62,52 @@ io.on("connection", (socket) => {
     }
   });
 
+  socket.on("refreshFriendsList", (userId) => {
+    if (userId && userId !== "undefined") {
+      const userSocketId = getReceiverSocketId(userId);
+      if (userSocketId) {
+        io.to(userSocketId).emit("refreshFriendsList", {
+          message: "Please refresh your friends list"
+        });
+      }
+    }
+  });
+
+  socket.on("sendMessage", (data) => {
+    const receiverSocketId = getReceiverSocketId(data.receiverId);
+    if (receiverSocketId) {
+      io.to(receiverSocketId).emit("newMessage", data.message);
+    }
+  });
+
+  // NEW: Handle account deletion notification
+  socket.on("accountDeleted", (data) => {
+    const { deletedUserId, affectedUserIds } = data;
+    
+    // Remove deleted user from online users
+    if (userSocketMap[deletedUserId]) {
+      delete userSocketMap[deletedUserId];
+    }
+    
+    // Notify all affected users (friends of the deleted user)
+    affectedUserIds.forEach(userId => {
+      const userSocketId = getReceiverSocketId(userId);
+      if (userSocketId) {
+        io.to(userSocketId).emit("userAccountDeleted", {
+          deletedUserId: deletedUserId,
+          message: "A user has deleted their account",
+          displayName: "Talko User"
+        });
+      }
+    });
+    
+    // Update online users list
+    io.emit("getOnlineUsers", Object.keys(userSocketMap));
+  });
+
   socket.on("disconnect", () => {
     console.log("User disconnected: " + socket.id);
     
-    // Find and remove the user from the socket map
     const disconnectedUserId = Object.keys(userSocketMap).find(
       key => userSocketMap[key] === socket.id
     );
@@ -124,18 +116,15 @@ io.on("connection", (socket) => {
       delete userSocketMap[disconnectedUserId];
       console.log(`User ${disconnectedUserId} went offline`);
       
-      // Broadcast to all users that this user is offline
       socket.broadcast.emit("userStatusUpdate", {
         userId: disconnectedUserId,
         isOnline: false
       });
     }
     
-    // Send updated online users list
     io.emit("getOnlineUsers", Object.keys(userSocketMap));
   });
 
-  // Handle errors
   socket.on("error", (error) => {
     console.error("Socket error:", error);
   });

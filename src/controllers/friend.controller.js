@@ -1,6 +1,9 @@
 import User from "../models/User.model.js";
 import FriendRequest from "../models/FriendRequest.model.js";
+import Message from "../models/Message.model.js";
 import mongoose from "mongoose";
+import { getReceiverSocketId, io } from "../lib/socket.js";
+import { removeFriendshipCompletely, getFriendshipStatus } from "../lib/RemoveFriend.js";
 
 export const sendFriendRequest = async (req, res) => {
   try {
@@ -20,25 +23,44 @@ export const sendFriendRequest = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    const existingRequest = await FriendRequest.requestExists(senderId, receiverId);
-    if (existingRequest) {
-      return res.status(400).json({ message: "Request already exists" });
-    }
-
+    // Check if they are already friends
     const areFriends = await FriendRequest.areFriends(senderId, receiverId);
     if (areFriends) {
       return res.status(400).json({ message: "Already friends" });
     }
 
+    // Check for existing pending requests
+    const existingRequest = await FriendRequest.findOne({
+      $or: [
+        { senderId: senderId, receiverId: receiverId, status: "pending" },
+        { senderId: receiverId, receiverId: senderId, status: "pending" },
+      ],
+    });
+
+    if (existingRequest) {
+      return res.status(400).json({ message: "Request already exists" });
+    }
+
     const newRequest = new FriendRequest({
       senderId,
       receiverId,
-      message: message || ""
+      message: message || "",
+      status: "pending"
     });
 
     await newRequest.save();
     await newRequest.populate("senderId", "fullname username profilePic");
 
+    // Emit socket event for real-time notification
+    const receiverSocketId = getReceiverSocketId(receiverId);
+    if (receiverSocketId) {
+      io.to(receiverSocketId).emit("newFriendRequest", {
+        request: newRequest,
+        message: "You have a new friend request"
+      });
+    }
+
+    console.log(`✅ Friend request sent from ${req.user.fullname} to ${receiver.fullname}`);
     res.status(201).json({ message: "Friend request sent", request: newRequest });
   } catch (error) {
     console.error("Send friend request error:", error);
@@ -74,9 +96,36 @@ export const acceptFriendRequest = async (req, res) => {
     const sender = await User.findById(request.senderId);
     const receiver = await User.findById(request.receiverId);
 
+    // Add each other as friends
     await sender.addFriend(request.receiverId);
     await receiver.addFriend(request.senderId);
 
+    // Emit socket event for real-time notification
+    const senderSocketId = getReceiverSocketId(request.senderId);
+    if (senderSocketId) {
+      io.to(senderSocketId).emit("friendRequestAccepted", {
+        friendId: request.receiverId,
+        message: `${receiver.fullname} accepted your friend request`,
+        friend: {
+          _id: receiver._id,
+          fullname: receiver.fullname,
+          username: receiver.username,
+          profilePic: receiver.profilePic
+        }
+      });
+    }
+
+    // Also notify the receiver to update their UI
+    const receiverSocketId = getReceiverSocketId(request.receiverId);
+    if (receiverSocketId) {
+      io.to(receiverSocketId).emit("friendRequestProcessed", {
+        requestId: requestId,
+        action: "accepted",
+        message: "Friend request accepted"
+      });
+    }
+
+    console.log(`✅ Friend request accepted: ${receiver.fullname} accepted ${sender.fullname}`);
     res.status(200).json({ message: "Friend request accepted" });
   } catch (error) {
     console.error("Accept friend request error:", error);
@@ -106,9 +155,29 @@ export const rejectFriendRequest = async (req, res) => {
       return res.status(400).json({ message: "Request already processed" });
     }
 
-    request.status = "rejected";
-    await request.save();
+    // Delete the request entirely so user can send again later
+    await FriendRequest.deleteOne({ _id: request._id });
 
+    // Emit socket event for real-time notification
+    const senderSocketId = getReceiverSocketId(request.senderId);
+    if (senderSocketId) {
+      io.to(senderSocketId).emit("friendRequestRejected", {
+        friendId: request.receiverId,
+        message: "Your friend request was declined"
+      });
+    }
+
+    // Also notify the receiver to update their UI
+    const receiverSocketId = getReceiverSocketId(request.receiverId);
+    if (receiverSocketId) {
+      io.to(receiverSocketId).emit("friendRequestProcessed", {
+        requestId: requestId,
+        action: "rejected",
+        message: "Friend request rejected"
+      });
+    }
+
+    console.log(`❌ Friend request rejected: ${req.user.fullname} rejected request`);
     res.status(200).json({ message: "Friend request rejected" });
   } catch (error) {
     console.error("Reject friend request error:", error);
@@ -168,26 +237,20 @@ export const removeFriend = async (req, res) => {
       return res.status(400).json({ message: "Invalid friend ID" });
     }
 
-    const friendship = await FriendRequest.findOne({
-      $or: [
-        { senderId: userId, receiverId: friendId, status: "accepted" },
-        { senderId: friendId, receiverId: userId, status: "accepted" }
-      ]
-    });
+    // Use the utility function to completely remove friendship
+    const result = await removeFriendshipCompletely(userId, friendId);
 
-    if (!friendship) {
-      return res.status(404).json({ message: "Friendship not found" });
+    if (!result.success) {
+      return res.status(404).json({ message: result.message });
     }
 
-    await FriendRequest.deleteOne({ _id: friendship._id });
+    console.log(`🗑️ Friendship removed: ${req.user.fullname} removed friend ${friendId}`);
+    console.log(`📝 Deleted ${result.deletedMessages} messages`);
 
-    const user = await User.findById(userId);
-    const friend = await User.findById(friendId);
-
-    await user.removeFriend(friendId);
-    await friend.removeFriend(userId);
-
-    res.status(200).json({ message: "Friend removed successfully" });
+    res.status(200).json({ 
+      message: result.message,
+      deletedMessages: result.deletedMessages
+    });
   } catch (error) {
     console.error("Remove friend error:", error);
     res.status(500).json({ message: "Internal server error" });
@@ -214,19 +277,8 @@ export const searchUsers = async (req, res) => {
 
     const usersWithStatus = await Promise.all(
       users.map(async (user) => {
-        const areFriends = await FriendRequest.areFriends(userId, user._id);
-        const existingRequest = await FriendRequest.requestExists(userId, user._id);
+        const status = await getFriendshipStatus(userId, user._id);
         
-        let status = "none";
-        if (areFriends) status = "friends";
-        else if (existingRequest) {
-          if (existingRequest.senderId.toString() === userId.toString()) {
-            status = "sent";
-          } else {
-            status = "received";
-          }
-        }
-
         return {
           ...user.toObject(),
           relationshipStatus: status
@@ -237,6 +289,49 @@ export const searchUsers = async (req, res) => {
     res.status(200).json(usersWithStatus);
   } catch (error) {
     console.error("Search users error:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+// New function to cancel outgoing friend request
+export const cancelFriendRequest = async (req, res) => {
+  try {
+    const { requestId } = req.params;
+    const userId = req.user._id;
+
+    if (!mongoose.Types.ObjectId.isValid(requestId)) {
+      return res.status(400).json({ message: "Invalid request ID" });
+    }
+
+    const request = await FriendRequest.findById(requestId);
+    if (!request) {
+      return res.status(404).json({ message: "Friend request not found" });
+    }
+
+    if (request.senderId.toString() !== userId.toString()) {
+      return res.status(403).json({ message: "Not authorized to cancel this request" });
+    }
+
+    if (request.status !== "pending") {
+      return res.status(400).json({ message: "Request already processed" });
+    }
+
+    await FriendRequest.deleteOne({ _id: request._id });
+
+    // Notify the receiver that the request was cancelled
+    const receiverSocketId = getReceiverSocketId(request.receiverId);
+    if (receiverSocketId) {
+      io.to(receiverSocketId).emit("friendRequestCancelled", {
+        requestId: requestId,
+        senderId: userId,
+        message: "A friend request was cancelled"
+      });
+    }
+
+    console.log(`❌ Friend request cancelled by ${req.user.fullname}`);
+    res.status(200).json({ message: "Friend request cancelled" });
+  } catch (error) {
+    console.error("Cancel friend request error:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 };

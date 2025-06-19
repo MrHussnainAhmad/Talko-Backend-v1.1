@@ -1,3 +1,5 @@
+// Updated utils.js - Add helper functions for deleted accounts
+
 import jwt from "jsonwebtoken";
 
 export const genToken = (userId, res) => {
@@ -20,7 +22,24 @@ export const validateObjectId = (id) => {
   return /^[0-9a-fA-F]{24}$/.test(id);
 };
 
+// UPDATED: Handle deleted accounts in user response
 export const formatUserResponse = (user) => {
+  if (user.isDeleted) {
+    return {
+      _id: user._id,
+      id: user._id,
+      fullname: "Talko User",
+      username: "",
+      email: "",
+      profilePic: "",
+      friends: [],
+      isDeleted: true,
+      isOnline: false,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt
+    };
+  }
+
   return {
     _id: user._id,
     id: user._id,
@@ -29,8 +48,39 @@ export const formatUserResponse = (user) => {
     email: user.email,
     profilePic: user.profilePic,
     friends: user.friends || [],
+    isDeleted: false,
+    isOnline: user.isOnline || false,
     createdAt: user.createdAt,
     updatedAt: user.updatedAt
+  };
+};
+
+// NEW: Format message response for deleted accounts
+export const formatMessageResponse = (message, senderUser = null) => {
+  let senderName = message.senderName;
+  let senderProfilePic = message.senderProfilePic;
+
+  // If we have sender user data and it's deleted
+  if (senderUser && senderUser.isDeleted) {
+    senderName = "Talko User";
+    senderProfilePic = "";
+  }
+
+  return {
+    _id: message._id,
+    senderId: message.senderId,
+    receiverId: message.receiverId,
+    message: message.message,
+    messageType: message.messageType,
+    conversationId: message.conversationId,
+    senderName: senderName || "Unknown User",
+    senderProfilePic: senderProfilePic || "",
+    isDeleted: message.isDeleted || false,
+    isSystemMessage: message.isSystemMessage || false,
+    isRead: message.isRead || false,
+    readAt: message.readAt,
+    createdAt: message.createdAt,
+    updatedAt: message.updatedAt,
   };
 };
 
@@ -70,4 +120,35 @@ export const sendError = (res, statusCode, message, error = null) => {
   };
   
   return res.status(statusCode).json(response);
+};
+
+// NEW: Helper to create conversation ID consistently
+export const createConversationId = (userId1, userId2) => {
+  return [userId1, userId2].sort().join('-');
+};
+
+// NEW: Helper to check if user account is deleted
+export const isAccountDeleted = (user) => {
+  return user && user.isDeleted === true;
+};
+
+// NEW: Helper to get safe user display data
+export const getSafeUserDisplayData = (user) => {
+  if (!user || user.isDeleted) {
+    return {
+      fullname: "Talko User",
+      username: "",
+      profilePic: "",
+      isOnline: false,
+      isDeleted: true
+    };
+  }
+
+  return {
+    fullname: user.fullname,
+    username: user.username,
+    profilePic: user.profilePic,
+    isOnline: user.isOnline || false,
+    isDeleted: false
+  };
 };

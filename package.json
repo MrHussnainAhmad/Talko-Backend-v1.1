@@ -1,6 +1,6 @@
 {
   "name": "backend",
-  "version": "1.0.3",
+  "version": "1.0.5",
   "main": "src/index.js",
   "scripts": {
     "dev": "nodemon src/index.js",
@@ -20,6 +20,7 @@
     "express": "^5.1.0",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.15.2",
+    "nodemailer": "^7.0.3",
     "socket.io": "^4.8.1"
   },
   "devDependencies": {
