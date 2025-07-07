@@ -28,6 +28,7 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
+     // FIELDS FOR FRIENDS AND LAST SEEN
     friends: [{
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
@@ -40,11 +41,12 @@ const userSchema = new mongoose.Schema(
       type: Date,
       default: Date.now,
     },
+    // FIELDS FOR ACCOUNT VERIFICATION
     isVerified: {
       type: Boolean,
       default: false,
     },
-    // NEW FIELDS FOR ACCOUNT DELETION
+    // FIELDS FOR ACCOUNT DELETION
     isDeleted: {
       type: Boolean,
       default: false,
@@ -78,7 +80,7 @@ userSchema.methods.getSafeUserData = function() {
     return {
       _id: this._id,
       id: this._id,
-      fullname: "Talko User",
+      fullname: "Talko xUser",
       username: "", // Don't show username for deleted accounts
       email: "", // Don't show email for deleted accounts
       profilePic: "",
