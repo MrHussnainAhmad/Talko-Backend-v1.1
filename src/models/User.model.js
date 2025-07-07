@@ -28,6 +28,11 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
+    about:{
+      type: String,
+      default: "Yes, I am using Talko!",
+      maxlength: 200, // Optional: Limit the length of the about field
+    },
      // FIELDS FOR FRIENDS AND LAST SEEN
     friends: [{
       type: mongoose.Schema.Types.ObjectId,
