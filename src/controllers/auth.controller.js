@@ -364,6 +364,8 @@ export const login = async (req, res) => {
       username: user.username,
       email: user.email,
       profilePic: user.profilePic,
+      about: user.about,
+      createdAt: user.createdAt,
       isVerified: user.isVerified,
     });
   } catch (error) {
@@ -496,6 +498,8 @@ export const checkAuth = async (req, res) => {
       username: req.user.username,
       email: req.user.email,
       profilePic: req.user.profilePic,
+      about: req.user.about,
+      createdAt: req.user.createdAt,
       isVerified: req.user.isVerified,
     };
 
