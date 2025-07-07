@@ -28,16 +28,18 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
-    about:{
+    about: {
       type: String,
       default: "Yes, I am using Talko!",
       maxlength: 200, // Optional: Limit the length of the about field
     },
-     // FIELDS FOR FRIENDS AND LAST SEEN
-    friends: [{
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-    }],
+    // FIELDS FOR FRIENDS AND LAST SEEN
+    friends: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
     isOnline: {
       type: Boolean,
       default: false,
@@ -62,7 +64,7 @@ const userSchema = new mongoose.Schema(
     },
   },
   {
-    timestamps: true, 
+    timestamps: true,
   }
 );
 
@@ -75,12 +77,12 @@ userSchema.index({ email: 1 });
 userSchema.index({ isDeleted: 1 });
 
 // Updated method to check if user is deleted
-userSchema.methods.isAccountDeleted = function() {
+userSchema.methods.isAccountDeleted = function () {
   return this.isDeleted === true;
 };
 
 // Method to get safe user data (for deleted accounts)
-userSchema.methods.getSafeUserData = function() {
+userSchema.methods.getSafeUserData = function () {
   if (this.isDeleted) {
     return {
       _id: this._id,
@@ -93,10 +95,10 @@ userSchema.methods.getSafeUserData = function() {
       isDeleted: true,
       friends: [],
       createdAt: this.createdAt,
-      updatedAt: this.updatedAt
+      updatedAt: this.updatedAt,
     };
   }
-  
+
   return {
     _id: this._id,
     id: this._id,
@@ -108,12 +110,12 @@ userSchema.methods.getSafeUserData = function() {
     isDeleted: false,
     friends: this.friends || [],
     createdAt: this.createdAt,
-    updatedAt: this.updatedAt
+    updatedAt: this.updatedAt,
   };
 };
 
 // Existing methods
-userSchema.methods.addFriend = function(friendId) {
+userSchema.methods.addFriend = function (friendId) {
   if (!this.friends.includes(friendId)) {
     this.friends.push(friendId);
     return this.save();
@@ -121,13 +123,13 @@ userSchema.methods.addFriend = function(friendId) {
   return Promise.resolve(this);
 };
 
-userSchema.methods.removeFriend = function(friendId) {
-  this.friends = this.friends.filter(id => !id.equals(friendId));
+userSchema.methods.removeFriend = function (friendId) {
+  this.friends = this.friends.filter((id) => !id.equals(friendId));
   return this.save();
 };
 
-userSchema.methods.isFriendsWith = function(userId) {
-  return this.friends.some(friendId => friendId.equals(userId));
+userSchema.methods.isFriendsWith = function (userId) {
+  return this.friends.some((friendId) => friendId.equals(userId));
 };
 
 const User = mongoose.model("User", userSchema);
