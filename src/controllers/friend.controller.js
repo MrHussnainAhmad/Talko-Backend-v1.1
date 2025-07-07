@@ -335,3 +335,32 @@ export const cancelFriendRequest = async (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 };
+
+// Get friend's profile - only accessible if users are friends
+export const getFriendProfile = async (req, res) => {
+  try {
+    const { friendId } = req.params;
+    const userId = req.user._id;
+
+    if (!mongoose.Types.ObjectId.isValid(friendId)) {
+      return res.status(400).json({ message: "Invalid friend ID" });
+    }
+
+    // Check if they are friends
+    const areFriends = await FriendRequest.areFriends(userId, friendId);
+    if (!areFriends) {
+      return res.status(403).json({ message: "You can only view profiles of your friends" });
+    }
+
+    // Get the friend's profile
+    const friend = await User.findById(friendId).select("fullname username profilePic about lastSeen");
+    if (!friend) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.status(200).json(friend);
+  } catch (error) {
+    console.error("Get friend profile error:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};

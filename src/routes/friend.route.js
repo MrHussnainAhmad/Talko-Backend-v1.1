@@ -9,7 +9,8 @@ import {
   getOutgoingRequests,
   getFriends,
   removeFriend,
-  searchUsers
+  searchUsers,
+  getFriendProfile
 } from "../controllers/friend.controller.js";
 
 const router = express.Router();
@@ -26,6 +27,7 @@ router.get("/requests/outgoing", protectRoute, getOutgoingRequests);
 
 // Friends management
 router.get("/", protectRoute, getFriends);
+router.get("/profile/:friendId", protectRoute, getFriendProfile);
 router.delete("/remove/:friendId", protectRoute, removeFriend);
 
 // User search
