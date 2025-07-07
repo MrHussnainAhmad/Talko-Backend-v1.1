@@ -7,7 +7,8 @@ import {
   checkAuth,
   verifyEmail,
   resendVerificationEmail,
-  deleteAccount
+  deleteAccount,
+  getUserProfile
 } from "../controllers/auth.controller.js";
 import { protectRoute } from "../middleware/auth.middleware.js";
 
@@ -28,13 +29,16 @@ router.get("/verify-email/:token", verifyEmail);
 //Resend Verification Email
 router.post("/resend-verification", resendVerificationEmail);
 
-//updateProfilePicture
+//updateProfile - now supports both profilePic and about fields
 router.put("/update-profile", protectRoute, updateProfile);
 
 //User logged in or not
 router.get("/check", protectRoute, checkAuth);
 
-// DELETE ACCOUNT ROUTE - NEW
+// NEW: Get user profile by userId
+router.get("/user-profile/:userId", protectRoute, getUserProfile);
+
+// DELETE ACCOUNT ROUTE
 router.delete("/delete-account", protectRoute, deleteAccount);
 
 export default router;

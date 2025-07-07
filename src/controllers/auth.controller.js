@@ -404,7 +404,7 @@ export const logout = (req, res) => {
   }
 };
 
-//Profile update controller
+//Profile update controller - UPDATED TO INCLUDE ABOUT FIELD
 export const updateProfile = async (req, res) => {
   try {
     console.log("🖼️ Profile update request received");
@@ -412,23 +412,40 @@ export const updateProfile = async (req, res) => {
     // Ensure database connection
     await connectDB();
 
-    const { profilePic } = req.body;
+    const { profilePic, about } = req.body;
     const userId = req.user._id;
 
-    if (!profilePic) {
-      return res.status(400).json({ message: "Profile picture is required" });
+    // Validate that at least one field is provided
+    if (!profilePic && !about) {
+      return res.status(400).json({ 
+        message: "At least one field (profilePic or about) is required" 
+      });
     }
 
-    console.log("☁️ Uploading to cloudinary...");
-    const uploadResponse = await cloudinary.uploader.upload(profilePic);
-    console.log("✅ Cloudinary upload successful");
+    // Validate about field length if provided
+    if (about && about.length > 200) {
+      return res.status(400).json({ 
+        message: "About field cannot exceed 200 characters" 
+      });
+    }
+
+    let updateData = {};
+
+    // Handle profile picture update
+    if (profilePic) {
+      console.log("☁️ Uploading to cloudinary...");
+      const uploadResponse = await cloudinary.uploader.upload(profilePic);
+      console.log("✅ Cloudinary upload successful");
+      updateData.profilePic = uploadResponse.secure_url;
+    }
+
+    // Handle about field update
+    if (about !== undefined) {
+      updateData.about = about;
+    }
 
     const updatedUser = await Promise.race([
-      User.findByIdAndUpdate(
-        userId,
-        { profilePic: uploadResponse.secure_url },
-        { new: true }
-      ),
+      User.findByIdAndUpdate(userId, updateData, { new: true }),
       new Promise((_, reject) =>
         setTimeout(() => reject(new Error("Database update timeout")), 10000)
       ),
@@ -437,8 +454,17 @@ export const updateProfile = async (req, res) => {
     console.log("✅ Profile updated successfully");
 
     res.status(200).json({
-      updatedUser,
-      message: "Profile picture updated successfully",
+      updatedUser: {
+        _id: updatedUser._id,
+        id: updatedUser._id,
+        fullname: updatedUser.fullname,
+        username: updatedUser.username,
+        email: updatedUser.email,
+        profilePic: updatedUser.profilePic,
+        about: updatedUser.about,
+        isVerified: updatedUser.isVerified,
+      },
+      message: "Profile updated successfully",
     });
   } catch (error) {
     console.error("❌ Profile update error:", error);
@@ -481,6 +507,88 @@ export const checkAuth = async (req, res) => {
   }
 };
 
+// NEW: Get user profile controller
+export const getUserProfile = async (req, res) => {
+  try {
+    console.log("👤 Get user profile request for:", req.params.userId);
+
+    // Ensure database connection
+    await connectDB();
+    console.log("✅ Database connected for user profile");
+
+    const { userId } = req.params;
+
+    // Validate userId
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({ 
+        message: "Invalid user ID" 
+      });
+    }
+
+    // Find user by ID with timeout
+    const user = await Promise.race([
+      User.findById(userId).select('fullname username profilePic about createdAt isDeleted'),
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("Database query timeout")), 10000)
+      ),
+    ]);
+
+    if (!user) {
+      return res.status(404).json({ 
+        message: "User not found" 
+      });
+    }
+
+    // Check if user account is deleted
+    if (user.isDeleted) {
+      return res.status(200).json({
+        user: {
+          _id: user._id,
+          id: user._id,
+          fullname: "Talko User",
+          username: "",
+          profilePic: "",
+          about: "",
+          createdAt: user.createdAt,
+          isDeleted: true,
+        },
+        message: "User profile retrieved successfully"
+      });
+    }
+
+    console.log("✅ User profile retrieved successfully");
+
+    res.status(200).json({
+      user: {
+        _id: user._id,
+        id: user._id,
+        fullname: user.fullname,
+        username: user.username,
+        profilePic: user.profilePic,
+        about: user.about,
+        createdAt: user.createdAt,
+        isDeleted: false,
+      },
+      message: "User profile retrieved successfully"
+    });
+  } catch (error) {
+    console.error("❌ Get user profile error:", error.message);
+    console.error("Error stack:", error.stack);
+
+    // Handle specific timeout errors
+    if (
+      error.message.includes("timeout") ||
+      error.message.includes("buffering timed out")
+    ) {
+      return res.status(503).json({
+        message: "Database connection timeout. Please try again.",
+      });
+    }
+
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
 // Delete account controller
 export const deleteAccount = async (req, res) => {
   const session = await mongoose.startSession();
@@ -504,6 +612,7 @@ export const deleteAccount = async (req, res) => {
           username: `deleted_user_${Date.now()}`, // Ensure unique username
           email: `deleted_${Date.now()}@deleted.com`, // Ensure unique email
           profilePic: "", // Remove profile picture
+          about: "", // Clear about field
           isOnline: false,
           isVerified: false,
           password: "", // Clear password
