@@ -30,7 +30,7 @@ const userSchema = new mongoose.Schema(
     },
     about: {
       type: String,
-      default: "Yes, I am using Talko!",
+      default: "Yes, I am using Talkora!",
       maxlength: 200, // Optional: Limit the length of the about field
     },
     // FIELDS FOR FRIENDS AND LAST SEEN
@@ -85,7 +85,7 @@ userSchema.methods.getSafeUserData = function () {
     return {
       _id: this._id,
       id: this._id,
-      fullname: "Talko xUser",
+      fullname: "Talkora xUser",
       username: "", // Don't show username for deleted accounts
       email: "", // Don't show email for deleted accounts
       profilePic: "",

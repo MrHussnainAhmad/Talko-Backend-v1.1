@@ -40,7 +40,7 @@ app.use("/api/friends", friendRoutes);
 app.use("/api/messages", messageRoutes);
 
 app.get('/', (req, res) => {
-  res.send('Welcome to Talko - Local Development Server!');
+  res.send('Welcome to Talkora - Local Development Server!');
 });
 
 server.listen(PORT, () => {

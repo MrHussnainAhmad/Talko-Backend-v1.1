@@ -34,12 +34,12 @@ const sendEmail = async (email, subject, text) => {
     console.log("✅ SMTP connection verified successfully");
 
     const mailOptions = {
-      from: `"Talko - Private Chat" <${process.env.USER}>`,
+      from: `"Talkora - Private Chat" <${process.env.USER}>`,
       to: email,
       subject: subject,
       text: text,
       html: `<div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-        <h2 style="color: #4CAF50;">Talko - Private Chat App</h2>
+        <h2 style="color: #4CAF50;">Talkora- Private Chat App</h2>
         ${text.replace(/\n/g, '<br>')}
         <hr style="margin: 20px 0; border: none; border-top: 1px solid #eee;">
         <p style="font-size: 12px; color: #666;">

@@ -138,7 +138,7 @@ io.on("connection", (socket) => {
         io.to(userSocketId).emit("userAccountDeleted", {
           deletedUserId: deletedUserId,
           message: "A user has deleted their account",
-          displayName: "Talko User"
+          displayName: "Talkora User"
         });
       }
     });

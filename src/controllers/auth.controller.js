@@ -102,7 +102,7 @@ export const signup = async (req, res) => {
       If you didn't create an account, please ignore this email.
       
       Best regards,
-      Talko - Private Chat Team
+      Talkora - Private Chat Team
       `;
 
     await sendEmail(email, emailSubject, emailText);
@@ -550,7 +550,7 @@ export const getUserProfile = async (req, res) => {
         user: {
           _id: user._id,
           id: user._id,
-          fullname: "Talko User",
+          fullname: "Talkora User",
           username: "",
           profilePic: "",
           about: "",
@@ -613,7 +613,7 @@ export const deleteAccount = async (req, res) => {
       await User.findByIdAndUpdate(
         userId,
         {
-          fullname: "Talko User",
+          fullname: "Talkora User",
           username: `deleted_user_${Date.now()}`, // Ensure unique username
           email: `deleted_${Date.now()}@deleted.com`, // Ensure unique email
           profilePic: "", // Remove profile picture
@@ -649,7 +649,7 @@ export const deleteAccount = async (req, res) => {
         { senderId: userId },
         {
           $set: {
-            senderName: "Talko User",
+            senderName: "Talkora User",
             senderProfilePic: "",
             isDeleted: true,
           },
@@ -677,7 +677,7 @@ export const deleteAccount = async (req, res) => {
                 messageType: "system",
                 isSystemMessage: true,
                 conversationId: conversationId,
-                senderName: "Talko User",
+                senderName: "Talkora User",
                 senderProfilePic: "",
                 isDeleted: true,
                 createdAt: new Date(),
