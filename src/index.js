@@ -23,6 +23,7 @@ app.use(cors({
   origin: [
     "https://talkora-web-frontend-v1.vercel.app",
     "http://localhost:3000",
+    "http://localhost:5173", // Vite development server
     "http://localhost:8081", // React Native development server (web)
     "http://localhost:19006", // Expo web development server (fallback)
     "http://192.168.3.58:3000", // React Native mobile device access
@@ -47,6 +48,7 @@ server.listen(PORT, () => {
   console.log(`🚀 Server is running on http://localhost:${PORT}`);
   console.log(`📡 Frontend should connect to: http://localhost:${PORT}`);
   console.log(`🌐 CORS enabled for: https://talkora-web-frontend-v1.vercel.app`);
+  console.log(`🔧 Local development CORS enabled for: http://localhost:5173`);
   console.log(`📱 React Native CORS enabled for: http://localhost:8081`);
   console.log(`📱 React Native Mobile CORS enabled for: http://192.168.3.58:${PORT}`);
   connectDB();
