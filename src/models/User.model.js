@@ -69,6 +69,38 @@ const userSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    // FIELDS FOR PUSH NOTIFICATIONS
+    fcmTokens: [{
+      token: String,
+      platform: {
+        type: String,
+        enum: ['web', 'ios', 'android'],
+        required: true
+      },
+      deviceId: String,
+      createdAt: {
+        type: Date,
+        default: Date.now
+      }
+    }],
+    // FIELDS FOR UNREAD NOTIFICATIONS
+    unreadNotifications: [{
+      type: {
+        type: String,
+        required: true
+      },
+      title: String,
+      body: String,
+      data: mongoose.Schema.Types.Mixed,
+      read: {
+        type: Boolean,
+        default: false
+      },
+      createdAt: {
+        type: Date,
+        default: Date.now
+      }
+    }],
   },
   {
     timestamps: true,

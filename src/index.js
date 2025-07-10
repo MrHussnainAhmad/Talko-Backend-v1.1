@@ -2,11 +2,13 @@ import express from 'express';
 import authRoutes from './routes/auth.route.js';
 import friendRoutes from './routes/friend.route.js';
 import messageRoutes from './routes/message.route.js';
+import notificationRoutes from './routes/notification.route.js';
 import dotenv from 'dotenv';
 import {connectDB} from './lib/db.js';
 import cookieParser from 'cookie-parser';
 import cors from "cors"
 import  {app, server} from './lib/socket.js';
+import { sendPushNotification, sendRealtimeNotification } from './services/notification/notification.service.js';
 
 const PORT = process.env.PORT || 3000;
 
@@ -39,9 +41,23 @@ app.use(cors({
 app.use("/api/auth", authRoutes);
 app.use("/api/friends", friendRoutes);
 app.use("/api/messages", messageRoutes);
+app.use("/api/notifications", notificationRoutes);
 
 app.get('/', (req, res) => {
   res.send('Welcome to Talkora - Local Development Server!');
+});
+
+// Test notification endpoint
+app.post('/api/test/push-notification', async (req, res) => {
+  const { tokens, payload } = req.body;
+  await sendPushNotification(tokens, payload);
+  res.status(200).send('Push notification sent.');
+});
+
+app.post('/api/test/realtime-notification', (req, res) => {
+  const { userId, event, data } = req.body;
+  sendRealtimeNotification(userId, event, data);
+  res.status(200).send('Real-time notification sent.');
 });
 
 server.listen(PORT, () => {
@@ -51,5 +67,12 @@ server.listen(PORT, () => {
   console.log(`🔧 Local development CORS enabled for: http://localhost:5173`);
   console.log(`📱 React Native CORS enabled for: http://localhost:8081`);
   console.log(`📱 React Native Mobile CORS enabled for: http://192.168.3.58:${PORT}`);
+  
+  // Initialize database
   connectDB();
+  
+  // Initialize Firebase for push notifications
+  import('./services/notification/firebase.config.js').then(({ initializeFirebase }) => {
+    initializeFirebase();
+  });
 });

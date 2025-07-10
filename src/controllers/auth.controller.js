@@ -10,6 +10,7 @@ import { io, getReceiverSocketId } from "../lib/socket.js";
 import eMailToken from "../models/Token.js";
 import sendEmail from "../lib/sendEmail.js";
 import crypto from "crypto";
+import { sendNotification, NotificationTypes } from "../services/notification/notification.handler.js";
 
 //signup controller
 export const signup = async (req, res) => {
@@ -455,6 +456,18 @@ export const updateProfile = async (req, res) => {
 
     console.log("✅ Profile updated successfully");
 
+    // Emit profile update to all users so friends can see updated profile
+    io.emit("profileUpdated", {
+      userId: updatedUser._id,
+      updatedProfile: {
+        _id: updatedUser._id,
+        fullname: updatedUser.fullname,
+        username: updatedUser.username,
+        profilePic: updatedUser.profilePic,
+        about: updatedUser.about
+      }
+    });
+
     res.status(200).json({
       updatedUser: {
         _id: updatedUser._id,
@@ -726,6 +739,20 @@ export const deleteAccount = async (req, res) => {
     const affectedUsers = await User.find({
       friends: req.user._id,
     }).select("_id");
+
+    // Send notifications to all friends about account deletion
+    const notificationPromises = affectedUsers.map(async (user) => {
+      await sendNotification({
+        userId: user._id,
+        type: NotificationTypes.ACCOUNT_DELETED,
+        title: "Account Deleted",
+        body: "A friend has deleted their account",
+        data: { deletedUserId: req.user._id.toString() },
+        priority: 'normal'
+      });
+    });
+
+    await Promise.all(notificationPromises);
 
     // Emit socket events to notify friends about the deletion
     affectedUsers.forEach((user) => {

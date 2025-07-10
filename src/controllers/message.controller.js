@@ -5,6 +5,7 @@ import mongoose from "mongoose";
 import { getReceiverSocketId, io } from "../lib/socket.js";
 import FriendRequest from "../models/FriendRequest.model.js";
 import { validateFriendship, removeFriendshipCompletely } from "../lib/RemoveFriend.js";
+import { sendNotification, NotificationTypes } from "../services/notification/notification.handler.js";
 
 export const getUsersForSiderbar = async (req, res) => {
   try {
@@ -128,7 +129,7 @@ export const sendMessage = async (req, res) => {
       return res.status(400).json({ message: "Invalid receiver ID format" });
     }
 
-    // Validate that both text and image are not empty
+// Validate that both text and image are not empty
     if (!text && !image) {
       return res.status(400).json({ message: "Message cannot be empty" });
     }
@@ -184,6 +185,19 @@ export const sendMessage = async (req, res) => {
     });
 
     await newMessage.save();
+
+    // Send notification for new message
+    const notificationTitle = `New message from ${sender.fullname}`;
+    const notificationBody = text || 'You have received a new image message';
+
+    await sendNotification({
+      userId: receiverId,
+      type: NotificationTypes.NEW_MESSAGE,
+      title: notificationTitle,
+      body: notificationBody,
+      data: { senderId: senderId.toString(), messageId: newMessage._id.toString(), senderName: sender.fullname },
+      priority: 'high'
+    });
 
     // Emit real-time message to receiver
     const receiverSocketId = getReceiverSocketId(receiverId);
