@@ -183,13 +183,13 @@ userSchema.methods.getFormattedLastSeen = function () {
   const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
   
   if (diffInMinutes < 60) {
-    return `last seen today at ${diffInMinutes} ago`;
+    return `last seen today at ${diffInMinutes} mins ago`;
   } else if (diffInHours < 6) {
-    return `last seen today at ${diffInHours} ago`;
+    return `last seen today at ${diffInHours} hours ago`;
   } else if (diffInHours < 24) {
     const hours = lastSeen.getHours().toString().padStart(2, '0');
     const minutes = lastSeen.getMinutes().toString().padStart(2, '0');
-    return `last seen today at ${hours}:${minutes} ago`;
+    return `last seen today at ${hours}:${minutes} mins ago`;
   } else if (diffInDays === 1) {
     const hours = lastSeen.getHours().toString().padStart(2, '0');
     const minutes = lastSeen.getMinutes().toString().padStart(2, '0');
