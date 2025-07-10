@@ -10,7 +10,7 @@ const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
     origin: [
-      "https://talko-web-frontend-v1.vercel.app",
+      "https://talkora-web-frontend-v1.vercel.app",
       "exp://192.168.3.58:8081", // Expo development
       "http://localhost:8081", // Local development
       "http://192.168.3.58:8081", // Local network
@@ -138,7 +138,7 @@ io.on("connection", (socket) => {
         io.to(userSocketId).emit("userAccountDeleted", {
           deletedUserId: deletedUserId,
           message: "A user has deleted their account",
-          displayName: "Talkora User"
+          displayName: "Talkora xUser"
         });
       }
     });

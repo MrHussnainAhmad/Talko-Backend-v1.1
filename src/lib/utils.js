@@ -26,7 +26,7 @@ export const formatUserResponse = (user) => {
     return {
       _id: user._id,
       id: user._id,
-      fullname: "Talkora User",
+      fullname: "Talkora xUser",
       username: "",
       email: "",
       profilePic: "",
@@ -60,7 +60,7 @@ export const formatMessageResponse = (message, senderUser = null) => {
 
   // If we have sender user data and it's deleted
   if (senderUser && senderUser.isDeleted) {
-    senderName = "Talkora User";
+    senderName = "Talkora xUser";
     senderProfilePic = "";
   }
 
@@ -134,7 +134,7 @@ export const isAccountDeleted = (user) => {
 export const getSafeUserDisplayData = (user) => {
   if (!user || user.isDeleted) {
     return {
-      fullname: "Talkora User",
+      fullname: "Talkora xUser",
       username: "",
       profilePic: "",
       isOnline: false,

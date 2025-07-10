@@ -98,7 +98,7 @@ messageSchema.methods.getFormattedMessage = function() {
     image: this.image,
     messageType: this.messageType,
     conversationId: this.conversationId,
-    senderName: this.isDeleted ? "Talkora User" : this.senderName,
+    senderName: this.isDeleted ? "Talkora xUser" : this.senderName,
     senderProfilePic: this.isDeleted ? "" : this.senderProfilePic,
     isDeleted: this.isDeleted,
     isSystemMessage: this.isSystemMessage,

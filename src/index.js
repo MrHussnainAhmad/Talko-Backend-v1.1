@@ -21,7 +21,7 @@ app.use(cookieParser());
 // CORS configuration for production and React Native development
 app.use(cors({
   origin: [
-    "https://talko-web-frontend-v1.vercel.app",
+    "https://talkora-web-frontend-v1.vercel.app",
     "http://localhost:3000",
     "http://localhost:8081", // React Native development server (web)
     "http://localhost:19006", // Expo web development server (fallback)
@@ -46,7 +46,7 @@ app.get('/', (req, res) => {
 server.listen(PORT, () => {
   console.log(`🚀 Server is running on http://localhost:${PORT}`);
   console.log(`📡 Frontend should connect to: http://localhost:${PORT}`);
-  console.log(`🌐 CORS enabled for: https://talko-web-frontend-v1.vercel.app`);
+  console.log(`🌐 CORS enabled for: https://talkora-web-frontend-v1.vercel.app`);
   console.log(`📱 React Native CORS enabled for: http://localhost:8081`);
   console.log(`📱 React Native Mobile CORS enabled for: http://192.168.3.58:${PORT}`);
   connectDB();

@@ -88,7 +88,7 @@ export const signup = async (req, res) => {
     console.log("✅ Email verification token saved");
 
     // Send verification email
-    const verificationUrl = `https://talko-private-chat.up.railway.app/api/auth/verify-email/${verificationToken}`;
+    const verificationUrl = `https://talkora-private-chat.up.railway.app/api/auth/verify-email/${verificationToken}`;
     const emailSubject = "Email Verification";
     const emailText = `
       Hi ${fullname},
@@ -550,7 +550,7 @@ export const getUserProfile = async (req, res) => {
         user: {
           _id: user._id,
           id: user._id,
-          fullname: "Talkora User",
+          fullname: "Talkora xUser",
           username: "",
           profilePic: "",
           about: "",
@@ -613,7 +613,7 @@ export const deleteAccount = async (req, res) => {
       await User.findByIdAndUpdate(
         userId,
         {
-          fullname: "Talkora User",
+          fullname: "Talkora xUser",
           username: `deleted_user_${Date.now()}`, // Ensure unique username
           email: `deleted_${Date.now()}@deleted.com`, // Ensure unique email
           profilePic: "", // Remove profile picture
