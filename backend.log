@@ -1,0 +1,636 @@
+nohup: ignoring input
+
+> backend@0.1.1 start
+> node src/index.js
+
+(node:106802) [MONGOOSE] Warning: Duplicate schema index on {"username":1} found. This is often due to declaring an index using both "index: true" and "schema.index()". Please remove the duplicate index definition.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:106802) [MONGOOSE] Warning: Duplicate schema index on {"email":1} found. This is often due to declaring an index using both "index: true" and "schema.index()". Please remove the duplicate index definition.
+🚀 Server is running on http://localhost:3000
+📡 Frontend should connect to: http://localhost:3000
+🌐 CORS enabled for: https://talko-web-frontend-v1.vercel.app
+📱 React Native CORS enabled for: http://localhost:8081
+📱 React Native Mobile CORS enabled for: http://192.168.3.58:3000
+A user connected: V5Io3Lp-hEzLQIlDAAAB
+User 68536eca96a79feaf10b55b5 connected with socket V5Io3Lp-hEzLQIlDAAAB
+✅ Database connected successfully
+Current online users: [ '68536eca96a79feaf10b55b5' ]
+Broadcasting online users to all clients: 68536eca96a79feaf10b55b5
+A user connected: jsEDh-inmyNLMZaGAAAD
+User 68536fcfd0167e0bcf7e082b connected with socket jsEDh-inmyNLMZaGAAAD
+Current online users: [ '68536eca96a79feaf10b55b5', '68536fcfd0167e0bcf7e082b' ]
+Broadcasting online users to all clients: 68536eca96a79feaf10b55b5,68536fcfd0167e0bcf7e082b
+A user connected: lkRB3cWSp_QoezEaAAAF
+User 686da6addd502845657b2628 connected with socket lkRB3cWSp_QoezEaAAAF
+Current online users: [
+  '68536eca96a79feaf10b55b5',
+  '68536fcfd0167e0bcf7e082b',
+  '686da6addd502845657b2628'
+]
+Broadcasting online users to all clients: 68536eca96a79feaf10b55b5,68536fcfd0167e0bcf7e082b,686da6addd502845657b2628
+Cookies received: {
+  token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2ODUzNmVjYTk2YTc5ZmVhZjEwYjU1YjUiLCJpYXQiOjE3NTIwMDc5NDcsImV4cCI6MTc1MjYxMjc0N30.aV2m8NNtDSjKlqIIzmgHoIVLxZxkemEdoce58vyBFcc',
+  'Max-Age': '604800',
+  Domain: '.railway.app',
+  Path: '/',
+  Expires: 'Tue, 15 Jul 2025 20:52:27 GMT',
+  SameSite: 'None'
+}
+Token found, verifying...
+Token decoded: {
+  userId: '68536eca96a79feaf10b55b5',
+  iat: 1752007947,
+  exp: 1752612747
+}
+Cookies received: {
+  token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2ODUzNmVjYTk2YTc5ZmVhZjEwYjU1YjUiLCJpYXQiOjE3NTIwMDc5NDcsImV4cCI6MTc1MjYxMjc0N30.aV2m8NNtDSjKlqIIzmgHoIVLxZxkemEdoce58vyBFcc',
+  'Max-Age': '604800',
+  Domain: '.railway.app',
+  Path: '/',
+  Expires: 'Tue, 15 Jul 2025 20:52:27 GMT',
+  SameSite: 'None'
+}
+Token found, verifying...
+Token decoded: {
+  userId: '68536eca96a79feaf10b55b5',
+  iat: 1752007947,
+  exp: 1752612747
+}
+Cookies received: {
+  token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2ODUzNmZjZmQwMTY3ZTBiY2Y3ZTA4MmIiLCJpYXQiOjE3NTIwMTYwMTksImV4cCI6MTc1MjYyMDgxOX0.Nfgeq2bopcXw9ws2xteRmzEWjfBZ9MYSvDcoBYG3IOo',
+  'Max-Age': '604800',
+  Domain: '.railway.app',
+  Path: '/',
+  Expires: 'Tue, 15 Jul 2025 23:06:59 GMT',
+  SameSite: 'None'
+}
+Token found, verifying...
+Token decoded: {
+  userId: '68536fcfd0167e0bcf7e082b',
+  iat: 1752016019,
+  exp: 1752620819
+}
+Cookies received: {
+  token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2ODUzNmZjZmQwMTY3ZTBiY2Y3ZTA4MmIiLCJpYXQiOjE3NTIwMTYwMTksImV4cCI6MTc1MjYyMDgxOX0.Nfgeq2bopcXw9ws2xteRmzEWjfBZ9MYSvDcoBYG3IOo',
+  'Max-Age': '604800',
+  Domain: '.railway.app',
+  Path: '/',
+  Expires: 'Tue, 15 Jul 2025 23:06:59 GMT',
+  SameSite: 'None'
+}
+Token found, verifying...
+Token decoded: {
+  userId: '68536fcfd0167e0bcf7e082b',
+  iat: 1752016019,
+  exp: 1752620819
+}
+Cookies received: {
+  token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2ODZkYTZhZGRkNTAyODQ1NjU3YjI2MjgiLCJpYXQiOjE3NTIwMTY2MTUsImV4cCI6MTc1MjYyMTQxNX0.oY2ZUyy33OWYoT9ouWTXp6--ZHcwCsoFoMz2Kjf6JbI',
+  'Max-Age': '604800',
+  Domain: '.railway.app',
+  Path: '/',
+  Expires: 'Tue, 15 Jul 2025 23:16:55 GMT',
+  SameSite: 'None'
+}
+Token found, verifying...
+Token decoded: {
+  userId: '686da6addd502845657b2628',
+  iat: 1752016615,
+  exp: 1752621415
+}
+Cookies received: {
+  token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2ODZkYTZhZGRkNTAyODQ1NjU3YjI2MjgiLCJpYXQiOjE3NTIwMTY2MTUsImV4cCI6MTc1MjYyMTQxNX0.oY2ZUyy33OWYoT9ouWTXp6--ZHcwCsoFoMz2Kjf6JbI',
+  'Max-Age': '604800',
+  Domain: '.railway.app',
+  Path: '/',
+  Expires: 'Tue, 15 Jul 2025 23:16:55 GMT',
+  SameSite: 'None'
+}
+Token found, verifying...
+Token decoded: {
+  userId: '686da6addd502845657b2628',
+  iat: 1752016615,
+  exp: 1752621415
+}
+User disconnected: V5Io3Lp-hEzLQIlDAAAB
+User 68536eca96a79feaf10b55b5 went offline
+Online users after disconnect: [ '68536fcfd0167e0bcf7e082b', '686da6addd502845657b2628' ]
+User 68536eca96a79feaf10b55b5 disconnected, broadcasting to all clients
+Cookies received: {
+  token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2ODUzNmZjZmQwMTY3ZTBiY2Y3ZTA4MmIiLCJpYXQiOjE3NTIwMTYwMTksImV4cCI6MTc1MjYyMDgxOX0.Nfgeq2bopcXw9ws2xteRmzEWjfBZ9MYSvDcoBYG3IOo',
+  'Max-Age': '604800',
+  Domain: '.railway.app',
+  Path: '/',
+  Expires: 'Tue, 15 Jul 2025 23:06:59 GMT',
+  SameSite: 'None'
+}
+Token found, verifying...
+Token decoded: {
+  userId: '68536fcfd0167e0bcf7e082b',
+  iat: 1752016019,
+  exp: 1752620819
+}
+Cookies received: {
+  token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2ODZkYTZhZGRkNTAyODQ1NjU3YjI2MjgiLCJpYXQiOjE3NTIwMTY2MTUsImV4cCI6MTc1MjYyMTQxNX0.oY2ZUyy33OWYoT9ouWTXp6--ZHcwCsoFoMz2Kjf6JbI',
+  'Max-Age': '604800',
+  Domain: '.railway.app',
+  Path: '/',
+  Expires: 'Tue, 15 Jul 2025 23:16:55 GMT',
+  SameSite: 'None'
+}
+Token found, verifying...
+Token decoded: {
+  userId: '686da6addd502845657b2628',
+  iat: 1752016615,
+  exp: 1752621415
+}
+Cookies received: {
+  token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2ODUzNmZjZmQwMTY3ZTBiY2Y3ZTA4MmIiLCJpYXQiOjE3NTIwMTYwMTksImV4cCI6MTc1MjYyMDgxOX0.Nfgeq2bopcXw9ws2xteRmzEWjfBZ9MYSvDcoBYG3IOo',
+  'Max-Age': '604800',
+  Domain: '.railway.app',
+  Path: '/',
+  Expires: 'Tue, 15 Jul 2025 23:06:59 GMT',
+  SameSite: 'None'
+}
+Token found, verifying...
+Token decoded: {
+  userId: '68536fcfd0167e0bcf7e082b',
+  iat: 1752016019,
+  exp: 1752620819
+}
+Cookies received: {
+  token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2ODZkYTZhZGRkNTAyODQ1NjU3YjI2MjgiLCJpYXQiOjE3NTIwMTY2MTUsImV4cCI6MTc1MjYyMTQxNX0.oY2ZUyy33OWYoT9ouWTXp6--ZHcwCsoFoMz2Kjf6JbI',
+  'Max-Age': '604800',
+  Domain: '.railway.app',
+  Path: '/',
+  Expires: 'Tue, 15 Jul 2025 23:16:55 GMT',
+  SameSite: 'None'
+}
+Token found, verifying...
+Token decoded: {
+  userId: '686da6addd502845657b2628',
+  iat: 1752016615,
+  exp: 1752621415
+}
+A user connected: YO62FNzUkNaA3MMkAAAH
+User 68536eca96a79feaf10b55b5 connected with socket YO62FNzUkNaA3MMkAAAH
+Current online users: [
+  '68536fcfd0167e0bcf7e082b',
+  '686da6addd502845657b2628',
+  '68536eca96a79feaf10b55b5'
+]
+Broadcasting online users to all clients: 68536fcfd0167e0bcf7e082b,686da6addd502845657b2628,68536eca96a79feaf10b55b5
+Cookies received: {
+  token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2ODUzNmVjYTk2YTc5ZmVhZjEwYjU1YjUiLCJpYXQiOjE3NTIwMDc5NDcsImV4cCI6MTc1MjYxMjc0N30.aV2m8NNtDSjKlqIIzmgHoIVLxZxkemEdoce58vyBFcc',
+  'Max-Age': '604800',
+  Domain: '.railway.app',
+  Path: '/',
+  Expires: 'Tue, 15 Jul 2025 20:52:27 GMT',
+  SameSite: 'None'
+}
+Token found, verifying...
+Token decoded: {
+  userId: '68536eca96a79feaf10b55b5',
+  iat: 1752007947,
+  exp: 1752612747
+}
+User disconnected: YO62FNzUkNaA3MMkAAAH
+User 68536eca96a79feaf10b55b5 went offline
+Online users after disconnect: [ '68536fcfd0167e0bcf7e082b', '686da6addd502845657b2628' ]
+User 68536eca96a79feaf10b55b5 disconnected, broadcasting to all clients
+User disconnected: jsEDh-inmyNLMZaGAAAD
+User 68536fcfd0167e0bcf7e082b went offline
+Online users after disconnect: [ '686da6addd502845657b2628' ]
+User 68536fcfd0167e0bcf7e082b disconnected, broadcasting to all clients
+User disconnected: lkRB3cWSp_QoezEaAAAF
+User 686da6addd502845657b2628 went offline
+Online users after disconnect: []
+User 686da6addd502845657b2628 disconnected, broadcasting to all clients
+Cookies received: {
+  token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2ODUzNmVjYTk2YTc5ZmVhZjEwYjU1YjUiLCJpYXQiOjE3NTIwMDc5NDcsImV4cCI6MTc1MjYxMjc0N30.aV2m8NNtDSjKlqIIzmgHoIVLxZxkemEdoce58vyBFcc',
+  'Max-Age': '604800',
+  Domain: '.railway.app',
+  Path: '/',
+  Expires: 'Tue, 15 Jul 2025 20:52:27 GMT',
+  SameSite: 'None'
+}
+Token found, verifying...
+Token decoded: {
+  userId: '68536eca96a79feaf10b55b5',
+  iat: 1752007947,
+  exp: 1752612747
+}
+🔍 Auth check for user: new ObjectId('68536eca96a79feaf10b55b5')
+✅ Auth check successful
+A user connected: N1IPZahAZtWpAudRAAAJ
+User 68536eca96a79feaf10b55b5 connected with socket N1IPZahAZtWpAudRAAAJ
+Current online users: [ '68536eca96a79feaf10b55b5' ]
+Broadcasting online users to all clients: 68536eca96a79feaf10b55b5
+Cookies received: {
+  token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2ODUzNmVjYTk2YTc5ZmVhZjEwYjU1YjUiLCJpYXQiOjE3NTIwMDc5NDcsImV4cCI6MTc1MjYxMjc0N30.aV2m8NNtDSjKlqIIzmgHoIVLxZxkemEdoce58vyBFcc',
+  'Max-Age': '604800',
+  Domain: '.railway.app',
+  Path: '/',
+  Expires: 'Tue, 15 Jul 2025 20:52:27 GMT',
+  SameSite: 'None'
+}
+Token found, verifying...
+Token decoded: {
+  userId: '68536eca96a79feaf10b55b5',
+  iat: 1752007947,
+  exp: 1752612747
+}
+Cookies received: {
+  token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2ODUzNmVjYTk2YTc5ZmVhZjEwYjU1YjUiLCJpYXQiOjE3NTIwMDc5NDcsImV4cCI6MTc1MjYxMjc0N30.aV2m8NNtDSjKlqIIzmgHoIVLxZxkemEdoce58vyBFcc',
+  'Max-Age': '604800',
+  Domain: '.railway.app',
+  Path: '/',
+  Expires: 'Tue, 15 Jul 2025 20:52:27 GMT',
+  SameSite: 'None'
+}
+Token found, verifying...
+Token decoded: {
+  userId: '68536eca96a79feaf10b55b5',
+  iat: 1752007947,
+  exp: 1752612747
+}
+Cookies received: {
+  token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2ODUzNmZjZmQwMTY3ZTBiY2Y3ZTA4MmIiLCJpYXQiOjE3NTIwMTYwMTksImV4cCI6MTc1MjYyMDgxOX0.Nfgeq2bopcXw9ws2xteRmzEWjfBZ9MYSvDcoBYG3IOo',
+  'Max-Age': '604800',
+  Domain: '.railway.app',
+  Path: '/',
+  Expires: 'Tue, 15 Jul 2025 23:06:59 GMT',
+  SameSite: 'None'
+}
+Token found, verifying...
+Token decoded: {
+  userId: '68536fcfd0167e0bcf7e082b',
+  iat: 1752016019,
+  exp: 1752620819
+}
+🔍 Auth check for user: new ObjectId('68536fcfd0167e0bcf7e082b')
+✅ Auth check successful
+A user connected: F9EbAsqiBzpW_odMAAAL
+User 68536fcfd0167e0bcf7e082b connected with socket F9EbAsqiBzpW_odMAAAL
+Current online users: [ '68536eca96a79feaf10b55b5', '68536fcfd0167e0bcf7e082b' ]
+Broadcasting online users to all clients: 68536eca96a79feaf10b55b5,68536fcfd0167e0bcf7e082b
+Cookies received: {
+  token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2ODUzNmZjZmQwMTY3ZTBiY2Y3ZTA4MmIiLCJpYXQiOjE3NTIwMTYwMTksImV4cCI6MTc1MjYyMDgxOX0.Nfgeq2bopcXw9ws2xteRmzEWjfBZ9MYSvDcoBYG3IOo',
+  'Max-Age': '604800',
+  Domain: '.railway.app',
+  Path: '/',
+  Expires: 'Tue, 15 Jul 2025 23:06:59 GMT',
+  SameSite: 'None'
+}
+Token found, verifying...
+Token decoded: {
+  userId: '68536fcfd0167e0bcf7e082b',
+  iat: 1752016019,
+  exp: 1752620819
+}
+Cookies received: {
+  token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2ODUzNmZjZmQwMTY3ZTBiY2Y3ZTA4MmIiLCJpYXQiOjE3NTIwMTYwMTksImV4cCI6MTc1MjYyMDgxOX0.Nfgeq2bopcXw9ws2xteRmzEWjfBZ9MYSvDcoBYG3IOo',
+  'Max-Age': '604800',
+  Domain: '.railway.app',
+  Path: '/',
+  Expires: 'Tue, 15 Jul 2025 23:06:59 GMT',
+  SameSite: 'None'
+}
+Token found, verifying...
+Token decoded: {
+  userId: '68536fcfd0167e0bcf7e082b',
+  iat: 1752016019,
+  exp: 1752620819
+}
+Cookies received: {
+  token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2ODZkYTZhZGRkNTAyODQ1NjU3YjI2MjgiLCJpYXQiOjE3NTIwMTY2MTUsImV4cCI6MTc1MjYyMTQxNX0.oY2ZUyy33OWYoT9ouWTXp6--ZHcwCsoFoMz2Kjf6JbI',
+  'Max-Age': '604800',
+  Domain: '.railway.app',
+  Path: '/',
+  Expires: 'Tue, 15 Jul 2025 23:16:55 GMT',
+  SameSite: 'None'
+}
+Token found, verifying...
+Token decoded: {
+  userId: '686da6addd502845657b2628',
+  iat: 1752016615,
+  exp: 1752621415
+}
+🔍 Auth check for user: new ObjectId('686da6addd502845657b2628')
+✅ Auth check successful
+A user connected: YZuDkoajhDqgyMVcAAAN
+User 686da6addd502845657b2628 connected with socket YZuDkoajhDqgyMVcAAAN
+Current online users: [
+  '68536eca96a79feaf10b55b5',
+  '68536fcfd0167e0bcf7e082b',
+  '686da6addd502845657b2628'
+]
+Broadcasting online users to all clients: 68536eca96a79feaf10b55b5,68536fcfd0167e0bcf7e082b,686da6addd502845657b2628
+Cookies received: {
+  token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2ODZkYTZhZGRkNTAyODQ1NjU3YjI2MjgiLCJpYXQiOjE3NTIwMTY2MTUsImV4cCI6MTc1MjYyMTQxNX0.oY2ZUyy33OWYoT9ouWTXp6--ZHcwCsoFoMz2Kjf6JbI',
+  'Max-Age': '604800',
+  Domain: '.railway.app',
+  Path: '/',
+  Expires: 'Tue, 15 Jul 2025 23:16:55 GMT',
+  SameSite: 'None'
+}
+Token found, verifying...
+Token decoded: {
+  userId: '686da6addd502845657b2628',
+  iat: 1752016615,
+  exp: 1752621415
+}
+Cookies received: {
+  token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2ODZkYTZhZGRkNTAyODQ1NjU3YjI2MjgiLCJpYXQiOjE3NTIwMTY2MTUsImV4cCI6MTc1MjYyMTQxNX0.oY2ZUyy33OWYoT9ouWTXp6--ZHcwCsoFoMz2Kjf6JbI',
+  'Max-Age': '604800',
+  Domain: '.railway.app',
+  Path: '/',
+  Expires: 'Tue, 15 Jul 2025 23:16:55 GMT',
+  SameSite: 'None'
+}
+Token found, verifying...
+Token decoded: {
+  userId: '686da6addd502845657b2628',
+  iat: 1752016615,
+  exp: 1752621415
+}
+Cookies received: {
+  token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2ODZkYTZhZGRkNTAyODQ1NjU3YjI2MjgiLCJpYXQiOjE3NTIwMTY2MTUsImV4cCI6MTc1MjYyMTQxNX0.oY2ZUyy33OWYoT9ouWTXp6--ZHcwCsoFoMz2Kjf6JbI',
+  'Max-Age': '604800',
+  Domain: '.railway.app',
+  Path: '/',
+  Expires: 'Tue, 15 Jul 2025 23:16:55 GMT',
+  SameSite: 'None'
+}
+Token found, verifying...
+Token decoded: {
+  userId: '686da6addd502845657b2628',
+  iat: 1752016615,
+  exp: 1752621415
+}
+Cookies received: {
+  token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2ODUzNmVjYTk2YTc5ZmVhZjEwYjU1YjUiLCJpYXQiOjE3NTIwMDc5NDcsImV4cCI6MTc1MjYxMjc0N30.aV2m8NNtDSjKlqIIzmgHoIVLxZxkemEdoce58vyBFcc',
+  'Max-Age': '604800',
+  Domain: '.railway.app',
+  Path: '/',
+  Expires: 'Tue, 15 Jul 2025 20:52:27 GMT',
+  SameSite: 'None'
+}
+Token found, verifying...
+Token decoded: {
+  userId: '68536eca96a79feaf10b55b5',
+  iat: 1752007947,
+  exp: 1752612747
+}
+Cookies received: {
+  token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2ODUzNmZjZmQwMTY3ZTBiY2Y3ZTA4MmIiLCJpYXQiOjE3NTIwMTYwMTksImV4cCI6MTc1MjYyMDgxOX0.Nfgeq2bopcXw9ws2xteRmzEWjfBZ9MYSvDcoBYG3IOo',
+  'Max-Age': '604800',
+  Domain: '.railway.app',
+  Path: '/',
+  Expires: 'Tue, 15 Jul 2025 23:06:59 GMT',
+  SameSite: 'None'
+}
+Token found, verifying...
+Token decoded: {
+  userId: '68536fcfd0167e0bcf7e082b',
+  iat: 1752016019,
+  exp: 1752620819
+}
+Cookies received: {
+  token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2ODUzNmVjYTk2YTc5ZmVhZjEwYjU1YjUiLCJpYXQiOjE3NTIwMDc5NDcsImV4cCI6MTc1MjYxMjc0N30.aV2m8NNtDSjKlqIIzmgHoIVLxZxkemEdoce58vyBFcc',
+  'Max-Age': '604800',
+  Domain: '.railway.app',
+  Path: '/',
+  Expires: 'Tue, 15 Jul 2025 20:52:27 GMT',
+  SameSite: 'None'
+}
+Token found, verifying...
+Token decoded: {
+  userId: '68536eca96a79feaf10b55b5',
+  iat: 1752007947,
+  exp: 1752612747
+}
+Cookies received: {
+  token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2ODZkYTZhZGRkNTAyODQ1NjU3YjI2MjgiLCJpYXQiOjE3NTIwMTY2MTUsImV4cCI6MTc1MjYyMTQxNX0.oY2ZUyy33OWYoT9ouWTXp6--ZHcwCsoFoMz2Kjf6JbI',
+  'Max-Age': '604800',
+  Domain: '.railway.app',
+  Path: '/',
+  Expires: 'Tue, 15 Jul 2025 23:16:55 GMT',
+  SameSite: 'None'
+}
+Token found, verifying...
+Token decoded: {
+  userId: '686da6addd502845657b2628',
+  iat: 1752016615,
+  exp: 1752621415
+}
+Cookies received: {
+  token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2ODUzNmZjZmQwMTY3ZTBiY2Y3ZTA4MmIiLCJpYXQiOjE3NTIwMTYwMTksImV4cCI6MTc1MjYyMDgxOX0.Nfgeq2bopcXw9ws2xteRmzEWjfBZ9MYSvDcoBYG3IOo',
+  'Max-Age': '604800',
+  Domain: '.railway.app',
+  Path: '/',
+  Expires: 'Tue, 15 Jul 2025 23:06:59 GMT',
+  SameSite: 'None'
+}
+Token found, verifying...
+Token decoded: {
+  userId: '68536fcfd0167e0bcf7e082b',
+  iat: 1752016019,
+  exp: 1752620819
+}
+Cookies received: {
+  token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2ODUzNmVjYTk2YTc5ZmVhZjEwYjU1YjUiLCJpYXQiOjE3NTIwMDc5NDcsImV4cCI6MTc1MjYxMjc0N30.aV2m8NNtDSjKlqIIzmgHoIVLxZxkemEdoce58vyBFcc',
+  'Max-Age': '604800',
+  Domain: '.railway.app',
+  Path: '/',
+  Expires: 'Tue, 15 Jul 2025 20:52:27 GMT',
+  SameSite: 'None'
+}
+Token found, verifying...
+Token decoded: {
+  userId: '68536eca96a79feaf10b55b5',
+  iat: 1752007947,
+  exp: 1752612747
+}
+Cookies received: {
+  token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2ODUzNmVjYTk2YTc5ZmVhZjEwYjU1YjUiLCJpYXQiOjE3NTIwMDc5NDcsImV4cCI6MTc1MjYxMjc0N30.aV2m8NNtDSjKlqIIzmgHoIVLxZxkemEdoce58vyBFcc',
+  'Max-Age': '604800',
+  Domain: '.railway.app',
+  Path: '/',
+  Expires: 'Tue, 15 Jul 2025 20:52:27 GMT',
+  SameSite: 'None'
+}
+Token found, verifying...
+Token decoded: {
+  userId: '68536eca96a79feaf10b55b5',
+  iat: 1752007947,
+  exp: 1752612747
+}
+Cookies received: {
+  token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2ODUzNmZjZmQwMTY3ZTBiY2Y3ZTA4MmIiLCJpYXQiOjE3NTIwMTYwMTksImV4cCI6MTc1MjYyMDgxOX0.Nfgeq2bopcXw9ws2xteRmzEWjfBZ9MYSvDcoBYG3IOo',
+  'Max-Age': '604800',
+  Domain: '.railway.app',
+  Path: '/',
+  Expires: 'Tue, 15 Jul 2025 23:06:59 GMT',
+  SameSite: 'None'
+}
+Token found, verifying...
+Token decoded: {
+  userId: '68536fcfd0167e0bcf7e082b',
+  iat: 1752016019,
+  exp: 1752620819
+}
+Cookies received: {
+  token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2ODZkYTZhZGRkNTAyODQ1NjU3YjI2MjgiLCJpYXQiOjE3NTIwMTY2MTUsImV4cCI6MTc1MjYyMTQxNX0.oY2ZUyy33OWYoT9ouWTXp6--ZHcwCsoFoMz2Kjf6JbI',
+  'Max-Age': '604800',
+  Domain: '.railway.app',
+  Path: '/',
+  Expires: 'Tue, 15 Jul 2025 23:16:55 GMT',
+  SameSite: 'None'
+}
+Token found, verifying...
+Token decoded: {
+  userId: '686da6addd502845657b2628',
+  iat: 1752016615,
+  exp: 1752621415
+}
+Cookies received: {
+  token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2ODUzNmVjYTk2YTc5ZmVhZjEwYjU1YjUiLCJpYXQiOjE3NTIwMDc5NDcsImV4cCI6MTc1MjYxMjc0N30.aV2m8NNtDSjKlqIIzmgHoIVLxZxkemEdoce58vyBFcc',
+  'Max-Age': '604800',
+  Domain: '.railway.app',
+  Path: '/',
+  Expires: 'Tue, 15 Jul 2025 20:52:27 GMT',
+  SameSite: 'None'
+}
+Token found, verifying...
+Token decoded: {
+  userId: '68536eca96a79feaf10b55b5',
+  iat: 1752007947,
+  exp: 1752612747
+}
+Cookies received: {
+  token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2ODUzNmZjZmQwMTY3ZTBiY2Y3ZTA4MmIiLCJpYXQiOjE3NTIwMTYwMTksImV4cCI6MTc1MjYyMDgxOX0.Nfgeq2bopcXw9ws2xteRmzEWjfBZ9MYSvDcoBYG3IOo',
+  'Max-Age': '604800',
+  Domain: '.railway.app',
+  Path: '/',
+  Expires: 'Tue, 15 Jul 2025 23:06:59 GMT',
+  SameSite: 'None'
+}
+Token found, verifying...
+Token decoded: {
+  userId: '68536fcfd0167e0bcf7e082b',
+  iat: 1752016019,
+  exp: 1752620819
+}
+Cookies received: {
+  token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2ODUzNmVjYTk2YTc5ZmVhZjEwYjU1YjUiLCJpYXQiOjE3NTIwMDc5NDcsImV4cCI6MTc1MjYxMjc0N30.aV2m8NNtDSjKlqIIzmgHoIVLxZxkemEdoce58vyBFcc',
+  'Max-Age': '604800',
+  Domain: '.railway.app',
+  Path: '/',
+  Expires: 'Tue, 15 Jul 2025 20:52:27 GMT',
+  SameSite: 'None'
+}
+Token found, verifying...
+Token decoded: {
+  userId: '68536eca96a79feaf10b55b5',
+  iat: 1752007947,
+  exp: 1752612747
+}
+Cookies received: {
+  token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2ODUzNmZjZmQwMTY3ZTBiY2Y3ZTA4MmIiLCJpYXQiOjE3NTIwMTYwMTksImV4cCI6MTc1MjYyMDgxOX0.Nfgeq2bopcXw9ws2xteRmzEWjfBZ9MYSvDcoBYG3IOo',
+  'Max-Age': '604800',
+  Domain: '.railway.app',
+  Path: '/',
+  Expires: 'Tue, 15 Jul 2025 23:06:59 GMT',
+  SameSite: 'None'
+}
+Token found, verifying...
+Token decoded: {
+  userId: '68536fcfd0167e0bcf7e082b',
+  iat: 1752016019,
+  exp: 1752620819
+}
+Cookies received: {
+  token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2ODUzNmZjZmQwMTY3ZTBiY2Y3ZTA4MmIiLCJpYXQiOjE3NTIwMTYwMTksImV4cCI6MTc1MjYyMDgxOX0.Nfgeq2bopcXw9ws2xteRmzEWjfBZ9MYSvDcoBYG3IOo',
+  'Max-Age': '604800',
+  Domain: '.railway.app',
+  Path: '/',
+  Expires: 'Tue, 15 Jul 2025 23:06:59 GMT',
+  SameSite: 'None'
+}
+Token found, verifying...
+Token decoded: {
+  userId: '68536fcfd0167e0bcf7e082b',
+  iat: 1752016019,
+  exp: 1752620819
+}
+Cookies received: {
+  token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2ODUzNmVjYTk2YTc5ZmVhZjEwYjU1YjUiLCJpYXQiOjE3NTIwMDc5NDcsImV4cCI6MTc1MjYxMjc0N30.aV2m8NNtDSjKlqIIzmgHoIVLxZxkemEdoce58vyBFcc',
+  'Max-Age': '604800',
+  Domain: '.railway.app',
+  Path: '/',
+  Expires: 'Tue, 15 Jul 2025 20:52:27 GMT',
+  SameSite: 'None'
+}
+Token found, verifying...
+Token decoded: {
+  userId: '68536eca96a79feaf10b55b5',
+  iat: 1752007947,
+  exp: 1752612747
+}
+Cookies received: {
+  token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2ODUzNmVjYTk2YTc5ZmVhZjEwYjU1YjUiLCJpYXQiOjE3NTIwMDc5NDcsImV4cCI6MTc1MjYxMjc0N30.aV2m8NNtDSjKlqIIzmgHoIVLxZxkemEdoce58vyBFcc',
+  'Max-Age': '604800',
+  Domain: '.railway.app',
+  Path: '/',
+  Expires: 'Tue, 15 Jul 2025 20:52:27 GMT',
+  SameSite: 'None'
+}
+Token found, verifying...
+Token decoded: {
+  userId: '68536eca96a79feaf10b55b5',
+  iat: 1752007947,
+  exp: 1752612747
+}
+Cookies received: {
+  token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2ODUzNmZjZmQwMTY3ZTBiY2Y3ZTA4MmIiLCJpYXQiOjE3NTIwMTYwMTksImV4cCI6MTc1MjYyMDgxOX0.Nfgeq2bopcXw9ws2xteRmzEWjfBZ9MYSvDcoBYG3IOo',
+  'Max-Age': '604800',
+  Domain: '.railway.app',
+  Path: '/',
+  Expires: 'Tue, 15 Jul 2025 23:06:59 GMT',
+  SameSite: 'None'
+}
+Token found, verifying...
+Token decoded: {
+  userId: '68536fcfd0167e0bcf7e082b',
+  iat: 1752016019,
+  exp: 1752620819
+}
+Cookies received: {
+  token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2ODUzNmVjYTk2YTc5ZmVhZjEwYjU1YjUiLCJpYXQiOjE3NTIwMDc5NDcsImV4cCI6MTc1MjYxMjc0N30.aV2m8NNtDSjKlqIIzmgHoIVLxZxkemEdoce58vyBFcc',
+  'Max-Age': '604800',
+  Domain: '.railway.app',
+  Path: '/',
+  Expires: 'Tue, 15 Jul 2025 20:52:27 GMT',
+  SameSite: 'None'
+}
+Token found, verifying...
+Token decoded: {
+  userId: '68536eca96a79feaf10b55b5',
+  iat: 1752007947,
+  exp: 1752612747
+}
+Cookies received: {
+  token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2ODUzNmZjZmQwMTY3ZTBiY2Y3ZTA4MmIiLCJpYXQiOjE3NTIwMTYwMTksImV4cCI6MTc1MjYyMDgxOX0.Nfgeq2bopcXw9ws2xteRmzEWjfBZ9MYSvDcoBYG3IOo',
+  'Max-Age': '604800',
+  Domain: '.railway.app',
+  Path: '/',
+  Expires: 'Tue, 15 Jul 2025 23:06:59 GMT',
+  SameSite: 'None'
+}
+Token found, verifying...
+Token decoded: {
+  userId: '68536fcfd0167e0bcf7e082b',
+  iat: 1752016019,
+  exp: 1752620819
+}

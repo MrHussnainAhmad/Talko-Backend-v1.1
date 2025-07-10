@@ -6,7 +6,9 @@ import {
   sendMessage,
   deleteMessagesWithUser,
   getMessageCount,
-  deleteChatHistory
+  deleteChatHistory,
+  markMessagesAsRead,
+  getUnreadMessageCount
 } from "../controllers/message.controller.js";
 
 const router = express.Router();
@@ -28,5 +30,11 @@ router.get("/count/:id", protectRoute, getMessageCount);
 
 // Delete chat history for both users
 router.delete("/privacy/:id", protectRoute, deleteChatHistory);
+
+// Mark messages as read
+router.put("/read/:id", protectRoute, markMessagesAsRead);
+
+// Get unread message count from a specific user
+router.get("/unread/:id", protectRoute, getUnreadMessageCount);
 
 export default router;

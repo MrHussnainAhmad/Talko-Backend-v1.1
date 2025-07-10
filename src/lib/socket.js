@@ -9,13 +9,43 @@ const server = http.createServer(app);
 
 const io = new Server(server, {
   cors: {
-    origin: ["https://talko-web-frontend-v1.vercel.app"],
+    origin: [
+      "https://talko-web-frontend-v1.vercel.app",
+      "exp://192.168.3.58:8081", // Expo development
+      "http://localhost:8081", // Local development
+      "http://192.168.3.58:8081", // Local network
+      /^exp:\/\//,  // Allow all expo URLs
+      /^http:\/\/192\.168\./,  // Allow local network IPs
+    ],
     methods: ["GET", "POST"],
     credentials: true,
+    allowEIO3: true, // Allow Engine.IO v3 clients
   },
+  allowEIO3: true, // Allow Engine.IO v3 clients
+  transports: ['polling', 'websocket'],
 });
 
 const userSocketMap = {}; // {userId: socketId}
+
+// Function to get current online users
+const getOnlineUsers = () => {
+  return Object.keys(userSocketMap);
+};
+
+// Function to broadcast online users to all clients
+const broadcastOnlineUsers = () => {
+  const onlineUsers = getOnlineUsers();
+  io.emit("getOnlineUsers", onlineUsers);
+  console.log(`📡 Broadcasting online users to all clients: [${onlineUsers.join(', ')}]`);
+};
+
+// Periodic sync every 5 seconds to ensure consistency
+setInterval(() => {
+  if (Object.keys(userSocketMap).length > 0) {
+    broadcastOnlineUsers();
+    console.log('🔄 Periodic online users sync');
+  }
+}, 5000); // 5 seconds
 
 export const getReceiverSocketId = (receiverId) => {
   return userSocketMap[receiverId];
@@ -26,11 +56,18 @@ io.on("connection", (socket) => {
   
   const userId = socket.handshake.query.userId;
   if (userId && userId !== "undefined") {
+    // Add user to the socket map
     userSocketMap[userId] = socket.id;
     console.log(`User ${userId} connected with socket ${socket.id}`);
+    
+    // Immediately send current online users to the new user
+    const currentOnlineUsers = getOnlineUsers();
+    socket.emit("getOnlineUsers", currentOnlineUsers);
+    console.log(`📤 Sent current online users to ${userId}: [${currentOnlineUsers.join(', ')}]`);
+    
+    // Broadcast updated online users list to ALL users (including the new one)
+    broadcastOnlineUsers();
   }
-
-  io.emit("getOnlineUsers", Object.keys(userSocketMap));
 
   socket.on("typing", (data) => {
     const receiverSocketId = getReceiverSocketId(data.receiverId);
@@ -73,12 +110,17 @@ io.on("connection", (socket) => {
     }
   });
 
-  socket.on("sendMessage", (data) => {
-    const receiverSocketId = getReceiverSocketId(data.receiverId);
-    if (receiverSocketId) {
-      io.to(receiverSocketId).emit("newMessage", data.message);
+  // Manual sync request
+  socket.on("requestOnlineUsers", (userId) => {
+    if (userId && userId !== "undefined") {
+      const currentOnlineUsers = getOnlineUsers();
+      socket.emit("getOnlineUsers", currentOnlineUsers);
+      console.log(`📤 Manual sync: Sent online users to ${userId}: [${currentOnlineUsers.join(', ')}]`);
     }
   });
+
+  // sendMessage socket event removed - messages are sent via API
+  // The API controller handles saving to DB and emitting via Socket.IO
 
   // NEW: Handle account deletion notification
   socket.on("accountDeleted", (data) => {
@@ -102,7 +144,7 @@ io.on("connection", (socket) => {
     });
     
     // Update online users list
-    io.emit("getOnlineUsers", Object.keys(userSocketMap));
+    broadcastOnlineUsers();
   });
 
   socket.on("disconnect", () => {
@@ -113,16 +155,21 @@ io.on("connection", (socket) => {
     );
     
     if (disconnectedUserId) {
+      // Remove user from socket map
       delete userSocketMap[disconnectedUserId];
       console.log(`User ${disconnectedUserId} went offline`);
       
+      // Broadcast updated online users list to ALL remaining users
+      broadcastOnlineUsers();
+      
+      // Also emit user status update
       socket.broadcast.emit("userStatusUpdate", {
         userId: disconnectedUserId,
         isOnline: false
       });
+      
+      console.log(`User ${disconnectedUserId} disconnected, broadcasting to all clients`);
     }
-    
-    io.emit("getOnlineUsers", Object.keys(userSocketMap));
   });
 
   socket.on("error", (error) => {

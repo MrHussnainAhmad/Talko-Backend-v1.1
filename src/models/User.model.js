@@ -70,8 +70,6 @@ const userSchema = new mongoose.Schema(
 
 // Existing indexes
 userSchema.index({ friends: 1 });
-userSchema.index({ username: 1 });
-userSchema.index({ email: 1 });
 
 // NEW INDEX for deleted accounts
 userSchema.index({ isDeleted: 1 });

@@ -464,6 +464,7 @@ export const updateProfile = async (req, res) => {
         email: updatedUser.email,
         profilePic: updatedUser.profilePic,
         about: updatedUser.about,
+        createdAt: updatedUser.createdAt,
         isVerified: updatedUser.isVerified,
       },
       message: "Profile updated successfully",

@@ -13,7 +13,7 @@ export const getUsersForSiderbar = async (req, res) => {
     // Get friends using the FriendRequest model method
     const friends = await FriendRequest.getFriends(loggedInUserId);
     
-    // Add last message info for each friend
+    // Add last message info and unread count for each friend
     const friendsWithLastMessage = await Promise.all(
       friends.map(async (friend) => {
         const lastMessage = await Message.findOne({
@@ -23,14 +23,26 @@ export const getUsersForSiderbar = async (req, res) => {
           ],
         }).sort({ createdAt: -1 });
 
+        // Get unread message count from this friend
+        const unreadCount = await Message.countDocuments({
+          senderId: friend._id,
+          receiverId: loggedInUserId,
+          isRead: false
+        });
+
         return {
           ...friend.toObject(),
           lastMessage: lastMessage ? {
-            text: lastMessage.text,
+            _id: lastMessage._id,
+            text: lastMessage.text || lastMessage.message, // Support both fields
             image: lastMessage.image,
             createdAt: lastMessage.createdAt,
-            senderId: lastMessage.senderId
-          } : null
+            senderId: lastMessage.senderId,
+            receiverId: lastMessage.receiverId,
+            isRead: lastMessage.isRead,
+            messageType: lastMessage.messageType
+          } : null,
+          unreadCount: unreadCount
         };
       })
     );
@@ -117,6 +129,7 @@ export const sendMessage = async (req, res) => {
       image: imageUrl,
       conversationId, // Add this required field
       messageType: image ? 'image' : 'text', // Set appropriate message type
+      isRead: false, // Explicitly set new messages as unread
     });
 
     await newMessage.save();
@@ -271,6 +284,73 @@ export const deleteChatHistory = async (req, res) => {
     });
   } catch (error) {
     console.error("Error deleting chat history:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+// Mark messages as read
+export const markMessagesAsRead = async (req, res) => {
+  try {
+    const { id: senderId } = req.params;
+    const receiverId = req.user._id;
+
+    if (!mongoose.Types.ObjectId.isValid(senderId)) {
+      return res.status(400).json({ message: "Invalid sender ID format" });
+    }
+
+    // Mark all unread messages from sender as read
+    const updatedMessages = await Message.updateMany(
+      {
+        senderId: senderId,
+        receiverId: receiverId,
+        isRead: false
+      },
+      {
+        $set: {
+          isRead: true,
+          readAt: new Date()
+        }
+      }
+    );
+
+    // Emit read receipt to sender
+    const senderSocketId = getReceiverSocketId(senderId);
+    if (senderSocketId) {
+      io.to(senderSocketId).emit("messagesRead", {
+        readerId: receiverId,
+        readCount: updatedMessages.modifiedCount
+      });
+    }
+
+    res.status(200).json({ 
+      message: "Messages marked as read",
+      readCount: updatedMessages.modifiedCount
+    });
+  } catch (error) {
+    console.error("Error marking messages as read:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+// Get unread message count from a specific user
+export const getUnreadMessageCount = async (req, res) => {
+  try {
+    const { id: senderId } = req.params;
+    const receiverId = req.user._id;
+
+    if (!mongoose.Types.ObjectId.isValid(senderId)) {
+      return res.status(400).json({ message: "Invalid sender ID format" });
+    }
+
+    const unreadCount = await Message.countDocuments({
+      senderId: senderId,
+      receiverId: receiverId,
+      isRead: false
+    });
+
+    res.status(200).json({ unreadCount });
+  } catch (error) {
+    console.error("Error getting unread message count:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 };

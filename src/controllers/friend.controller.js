@@ -262,8 +262,8 @@ export const searchUsers = async (req, res) => {
     const { query } = req.query;
     const userId = req.user._id;
 
-    if (!query || query.trim().length < 2) {
-      return res.status(400).json({ message: "Search query must be at least 2 characters" });
+    if (!query) {
+      return res.status(400).json({ message: "Search query cannot be empty" });
     }
 
     const users = await User.find({
