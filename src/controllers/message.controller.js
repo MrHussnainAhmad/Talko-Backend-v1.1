@@ -13,9 +13,16 @@ export const getUsersForSiderbar = async (req, res) => {
     // Get friends using the FriendRequest model method
     const friends = await FriendRequest.getFriends(loggedInUserId);
     
+    // Get current user to check blocking status
+    const currentUser = await User.findById(loggedInUserId);
+    
     // Add last message info and unread count for each friend
     const friendsWithLastMessage = await Promise.all(
       friends.map(async (friend) => {
+        // Check if this friend is blocked by current user or has blocked current user
+        const isBlocked = currentUser.isBlocked(friend._id);
+        const isBlockedBy = friend.blockedUsers && friend.blockedUsers.includes(loggedInUserId);
+        
         const lastMessage = await Message.findOne({
           $or: [
             { senderId: loggedInUserId, receiverId: friend._id },
@@ -29,6 +36,28 @@ export const getUsersForSiderbar = async (req, res) => {
           receiverId: loggedInUserId,
           isRead: false
         });
+        
+        // If blocked by the friend, hide profile info and show "Blocked. Silence is permanent."
+        if (isBlockedBy) {
+          return {
+            ...friend.toObject(),
+            profilePic: "", // Hide profile picture
+            isOnline: false, // Hide online status
+            lastSeen: null, // Hide last seen
+            lastMessage: {
+              _id: "blocked",
+              text: "Blocked. Silence is permanent.",
+              createdAt: new Date(),
+              senderId: friend._id,
+              receiverId: loggedInUserId,
+              isRead: true,
+              messageType: "system"
+            },
+            unreadCount: 0,
+            isBlocked: false,
+            isBlockedBy: true
+          };
+        }
 
         return {
           ...friend.toObject(),
@@ -42,7 +71,11 @@ export const getUsersForSiderbar = async (req, res) => {
             isRead: lastMessage.isRead,
             messageType: lastMessage.messageType
           } : null,
-          unreadCount: unreadCount
+          unreadCount: unreadCount,
+          isBlocked: isBlocked,
+          isBlockedBy: isBlockedBy,
+          // Include formatted last seen if not blocked
+          formattedLastSeen: !isBlocked && !isBlockedBy ? friend.getFormattedLastSeen() : null
         };
       })
     );
@@ -105,6 +138,24 @@ export const sendMessage = async (req, res) => {
     if (!areFriends) {
       return res.status(403).json({ 
         message: "Can only message friends. Please send a friend request first." 
+      });
+    }
+    
+    // Check if sender is blocked by receiver
+    const receiver = await User.findById(receiverId);
+    const sender = await User.findById(senderId);
+    
+    if (!receiver || !sender) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    
+    // If receiver has blocked sender, silently discard the message
+    if (receiver.isBlocked(senderId)) {
+      console.log(`Message from ${senderId} to ${receiverId} silently discarded - sender is blocked`);
+      // Return success response to sender but don't actually send/store the message
+      return res.status(200).json({ 
+        message: "Message sent successfully", 
+        silentlyDiscarded: true 
       });
     }
 

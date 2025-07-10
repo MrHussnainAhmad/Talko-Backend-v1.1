@@ -20,6 +20,19 @@ export const protectRoute = async (req, res, next) => {
       return res.status(404).json({ message: "User not found!" });
     }
 
+    // Update lastSeen for authenticated requests (except login/logout to avoid redundancy)
+    const isAuthRoute = req.path.includes('/login') || req.path.includes('/logout');
+    if (!isAuthRoute) {
+      try {
+        await User.findByIdAndUpdate(decoded.userId, { 
+          lastSeen: new Date() 
+        });
+      } catch (updateError) {
+        console.error('Failed to update lastSeen:', updateError.message);
+        // Don't fail the request if lastSeen update fails
+      }
+    }
+
     req.user = user;
     next();
   } catch (error) {

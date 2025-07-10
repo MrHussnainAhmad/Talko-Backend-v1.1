@@ -19,8 +19,15 @@ export const sendFriendRequest = async (req, res) => {
     }
 
     const receiver = await User.findById(receiverId);
+    const sender = await User.findById(senderId);
+    
     if (!receiver) {
       return res.status(404).json({ message: "User not found" });
+    }
+
+    // Check if sender is blocked by receiver or receiver is blocked by sender
+    if (receiver.isBlocked(senderId) || sender.isBlocked(receiverId)) {
+      return res.status(403).json({ message: "Cannot send friend request" });
     }
 
     // Check if they are already friends
@@ -220,8 +227,27 @@ export const getOutgoingRequests = async (req, res) => {
 export const getFriends = async (req, res) => {
   try {
     const userId = req.user._id;
+    const currentUser = await User.findById(userId);
     const friends = await FriendRequest.getFriends(userId);
-    res.status(200).json(friends);
+    
+    // Add blocking status and formatted last seen to each friend
+    const friendsWithStatus = friends.map(friend => {
+      const isBlocked = currentUser.isBlocked(friend._id);
+      const isBlockedBy = friend.blockedUsers && friend.blockedUsers.includes(userId);
+      
+      return {
+        ...friend.toObject(),
+        isBlocked,
+        isBlockedBy,
+        formattedLastSeen: !isBlocked && !isBlockedBy ? friend.getFormattedLastSeen() : null,
+        // Hide profile info if blocked by friend
+        profilePic: isBlockedBy ? "" : friend.profilePic,
+        isOnline: isBlockedBy ? false : friend.isOnline,
+        lastSeen: isBlockedBy ? null : friend.lastSeen
+      };
+    });
+    
+    res.status(200).json(friendsWithStatus);
   } catch (error) {
     console.error("Get friends error:", error);
     res.status(500).json({ message: "Internal server error" });
@@ -353,12 +379,39 @@ export const getFriendProfile = async (req, res) => {
     }
 
     // Get the friend's profile
-    const friend = await User.findById(friendId).select("fullname username profilePic about lastSeen");
+    const friend = await User.findById(friendId).select("fullname username profilePic about lastSeen isOnline blockedUsers");
+    const currentUser = await User.findById(userId);
+    
     if (!friend) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    res.status(200).json(friend);
+    // Check blocking status
+    const isBlocked = currentUser.isBlocked(friendId);
+    const isBlockedBy = friend.isBlocked(userId);
+    
+    // If blocked by friend, hide profile information
+    if (isBlockedBy) {
+      return res.status(200).json({
+        _id: friend._id,
+        fullname: friend.fullname,
+        username: "",
+        profilePic: "",
+        about: "",
+        isOnline: false,
+        lastSeen: null,
+        formattedLastSeen: "Last seen information hidden",
+        isBlocked: false,
+        isBlockedBy: true
+      });
+    }
+
+    res.status(200).json({
+      ...friend.toObject(),
+      formattedLastSeen: friend.getFormattedLastSeen(),
+      isBlocked,
+      isBlockedBy: false
+    });
   } catch (error) {
     console.error("Get friend profile error:", error);
     res.status(500).json({ message: "Internal server error" });

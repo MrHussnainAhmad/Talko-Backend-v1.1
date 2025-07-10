@@ -8,7 +8,12 @@ import {
   verifyEmail,
   resendVerificationEmail,
   deleteAccount,
-  getUserProfile
+  getUserProfile,
+  blockUser,
+  unblockUser,
+  getBlockedUsers,
+  checkBlockStatus,
+  getLastSeen
 } from "../controllers/auth.controller.js";
 import { protectRoute } from "../middleware/auth.middleware.js";
 
@@ -40,5 +45,14 @@ router.get("/user-profile/:userId", protectRoute, getUserProfile);
 
 // DELETE ACCOUNT ROUTE
 router.delete("/delete-account", protectRoute, deleteAccount);
+
+// BLOCKING ROUTES
+router.post("/block/:userId", protectRoute, blockUser);
+router.post("/unblock/:userId", protectRoute, unblockUser);
+router.get("/blocked-users", protectRoute, getBlockedUsers);
+router.get("/block-status/:userId", protectRoute, checkBlockStatus);
+
+// LAST SEEN ROUTE
+router.get("/last-seen/:userId", protectRoute, getLastSeen);
 
 export default router;

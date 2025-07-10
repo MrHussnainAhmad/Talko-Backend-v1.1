@@ -3,6 +3,8 @@
 import { Server } from "socket.io";
 import http from "http";
 import express from "express";
+import User from "../models/User.model.js";
+import { connectDB } from "./db.js";
 
 const app = express();
 const server = http.createServer(app);
@@ -51,7 +53,7 @@ export const getReceiverSocketId = (receiverId) => {
   return userSocketMap[receiverId];
 };
 
-io.on("connection", (socket) => {
+io.on("connection", async (socket) => {
   console.log("A user connected: " + socket.id);
   
   const userId = socket.handshake.query.userId;
@@ -59,6 +61,18 @@ io.on("connection", (socket) => {
     // Add user to the socket map
     userSocketMap[userId] = socket.id;
     console.log(`User ${userId} connected with socket ${socket.id}`);
+    
+    // Update user's online status in database
+    try {
+      await connectDB();
+      await User.findByIdAndUpdate(userId, { 
+        isOnline: true, 
+        lastSeen: new Date() 
+      });
+      console.log(`✅ User ${userId} online status updated in database`);
+    } catch (error) {
+      console.error(`❌ Failed to update online status for user ${userId}:`, error.message);
+    }
     
     // Immediately send current online users to the new user
     const currentOnlineUsers = getOnlineUsers();
@@ -147,7 +161,7 @@ io.on("connection", (socket) => {
     broadcastOnlineUsers();
   });
 
-  socket.on("disconnect", () => {
+  socket.on("disconnect", async () => {
     console.log("User disconnected: " + socket.id);
     
     const disconnectedUserId = Object.keys(userSocketMap).find(
@@ -158,6 +172,18 @@ io.on("connection", (socket) => {
       // Remove user from socket map
       delete userSocketMap[disconnectedUserId];
       console.log(`User ${disconnectedUserId} went offline`);
+      
+      // Update user's offline status and lastSeen in database
+      try {
+        await connectDB();
+        await User.findByIdAndUpdate(disconnectedUserId, { 
+          isOnline: false, 
+          lastSeen: new Date() 
+        });
+        console.log(`✅ User ${disconnectedUserId} offline status updated in database`);
+      } catch (error) {
+        console.error(`❌ Failed to update offline status for user ${disconnectedUserId}:`, error.message);
+      }
       
       // Broadcast updated online users list to ALL remaining users
       broadcastOnlineUsers();

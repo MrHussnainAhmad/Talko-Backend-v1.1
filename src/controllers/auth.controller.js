@@ -560,6 +560,29 @@ export const getUserProfile = async (req, res) => {
         message: "User profile retrieved successfully"
       });
     }
+    
+    // Check if the requested user has blocked the current user
+    const currentUser = await User.findById(req.user._id);
+    if (user.isBlocked(req.user._id)) {
+      // If blocked, hide profile information
+      return res.status(200).json({
+        user: {
+          _id: user._id,
+          id: user._id,
+          fullname: user.fullname, // Show name but hide other details
+          username: "",
+          profilePic: "", // Hide profile picture
+          about: "",
+          createdAt: user.createdAt,
+          isDeleted: false,
+          isBlocked: true,
+          isOnline: false, // Hide online status
+          lastSeen: null, // Hide last seen
+          formattedLastSeen: null
+        },
+        message: "User profile retrieved successfully"
+      });
+    }
 
     console.log("✅ User profile retrieved successfully");
 
@@ -573,6 +596,10 @@ export const getUserProfile = async (req, res) => {
         about: user.about,
         createdAt: user.createdAt,
         isDeleted: false,
+        isBlocked: false,
+        isOnline: user.isOnline || false,
+        lastSeen: user.lastSeen,
+        formattedLastSeen: user.getFormattedLastSeen()
       },
       message: "User profile retrieved successfully"
     });
@@ -745,5 +772,235 @@ export const deleteAccount = async (req, res) => {
     });
   } finally {
     await session.endSession();
+  }
+};
+
+// Block user controller
+export const blockUser = async (req, res) => {
+  try {
+    console.log("🚫 Block user request from:", req.user._id, "to:", req.params.userId);
+    
+    // Ensure database connection
+    await connectDB();
+    
+    const { userId } = req.params;
+    const blockerId = req.user._id;
+    
+    // Validate userId
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({ 
+        message: "Invalid user ID" 
+      });
+    }
+    
+    // Can't block yourself
+    if (userId === blockerId.toString()) {
+      return res.status(400).json({ 
+        message: "Cannot block yourself" 
+      });
+    }
+    
+    // Check if user to block exists
+    const userToBlock = await User.findById(userId);
+    if (!userToBlock) {
+      return res.status(404).json({ 
+        message: "User not found" 
+      });
+    }
+    
+    // Check if user is already blocked
+    const blocker = await User.findById(blockerId);
+    if (blocker.isBlocked(userId)) {
+      return res.status(400).json({ 
+        message: "User is already blocked" 
+      });
+    }
+    
+    // Block the user
+    await blocker.blockUser(userId);
+    
+    console.log("✅ User blocked successfully");
+    
+    res.status(200).json({
+      message: "User blocked successfully",
+      blockedUserId: userId
+    });
+  } catch (error) {
+    console.error("❌ Block user error:", error.message);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+// Unblock user controller
+export const unblockUser = async (req, res) => {
+  try {
+    console.log("✅ Unblock user request from:", req.user._id, "to:", req.params.userId);
+    
+    // Ensure database connection
+    await connectDB();
+    
+    const { userId } = req.params;
+    const unblockerId = req.user._id;
+    
+    // Validate userId
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({ 
+        message: "Invalid user ID" 
+      });
+    }
+    
+    // Can't unblock yourself
+    if (userId === unblockerId.toString()) {
+      return res.status(400).json({ 
+        message: "Cannot unblock yourself" 
+      });
+    }
+    
+    // Check if user is blocked
+    const unblocker = await User.findById(unblockerId);
+    if (!unblocker.isBlocked(userId)) {
+      return res.status(400).json({ 
+        message: "User is not blocked" 
+      });
+    }
+    
+    // Unblock the user
+    await unblocker.unblockUser(userId);
+    
+    console.log("✅ User unblocked successfully");
+    
+    res.status(200).json({
+      message: "User unblocked successfully",
+      unblockedUserId: userId
+    });
+  } catch (error) {
+    console.error("❌ Unblock user error:", error.message);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+// Get blocked users controller
+export const getBlockedUsers = async (req, res) => {
+  try {
+    console.log("📝 Get blocked users request from:", req.user._id);
+    
+    // Ensure database connection
+    await connectDB();
+    
+    const user = await User.findById(req.user._id).populate({
+      path: 'blockedUsers',
+      select: 'fullname username profilePic'
+    });
+    
+    if (!user) {
+      return res.status(404).json({ 
+        message: "User not found" 
+      });
+    }
+    
+    console.log("✅ Blocked users retrieved successfully");
+    
+    res.status(200).json({
+      blockedUsers: user.blockedUsers || [],
+      message: "Blocked users retrieved successfully"
+    });
+  } catch (error) {
+    console.error("❌ Get blocked users error:", error.message);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+// Get last seen information for a user
+export const getLastSeen = async (req, res) => {
+  try {
+    console.log("🕓 Get last seen request for:", req.params.userId);
+    
+    // Ensure database connection
+    await connectDB();
+    
+    const { userId } = req.params;
+    const currentUserId = req.user._id;
+    
+    // Validate userId
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({ 
+        message: "Invalid user ID" 
+      });
+    }
+    
+    const user = await User.findById(userId);
+    
+    if (!user) {
+      return res.status(404).json({ 
+        message: "User not found" 
+      });
+    }
+    
+    // Check if current user is blocked by the requested user
+    if (user.isBlocked(currentUserId)) {
+      return res.status(200).json({
+        isOnline: false,
+        lastSeen: null,
+        formattedLastSeen: "Last seen information hidden",
+        isBlocked: true,
+        message: "Last seen information retrieved successfully"
+      });
+    }
+    
+    console.log("✅ Last seen information retrieved successfully");
+    
+    res.status(200).json({
+      isOnline: user.isOnline || false,
+      lastSeen: user.lastSeen,
+      formattedLastSeen: user.getFormattedLastSeen(),
+      isBlocked: false,
+      message: "Last seen information retrieved successfully"
+    });
+  } catch (error) {
+    console.error("❌ Get last seen error:", error.message);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+// Check if user is blocked
+export const checkBlockStatus = async (req, res) => {
+  try {
+    console.log("🔍 Check block status request from:", req.user._id, "for:", req.params.userId);
+    
+    // Ensure database connection
+    await connectDB();
+    
+    const { userId } = req.params;
+    const currentUserId = req.user._id;
+    
+    // Validate userId
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({ 
+        message: "Invalid user ID" 
+      });
+    }
+    
+    const currentUser = await User.findById(currentUserId);
+    const otherUser = await User.findById(userId);
+    
+    if (!currentUser || !otherUser) {
+      return res.status(404).json({ 
+        message: "User not found" 
+      });
+    }
+    
+    const isBlocked = currentUser.isBlocked(userId);
+    const isBlockedBy = otherUser.isBlocked(currentUserId);
+    
+    console.log("✅ Block status checked successfully");
+    
+    res.status(200).json({
+      isBlocked,
+      isBlockedBy,
+      message: "Block status retrieved successfully"
+    });
+  } catch (error) {
+    console.error("❌ Check block status error:", error.message);
+    res.status(500).json({ message: "Internal server error" });
   }
 };

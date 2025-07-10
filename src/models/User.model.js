@@ -48,6 +48,13 @@ const userSchema = new mongoose.Schema(
       type: Date,
       default: Date.now,
     },
+    // FIELDS FOR BLOCKING USERS
+    blockedUsers: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
     // FIELDS FOR ACCOUNT VERIFICATION
     isVerified: {
       type: Boolean,
@@ -70,6 +77,9 @@ const userSchema = new mongoose.Schema(
 
 // Existing indexes
 userSchema.index({ friends: 1 });
+userSchema.index({ blockedUsers: 1 });
+userSchema.index({ lastSeen: 1 });
+userSchema.index({ isOnline: 1 });
 
 // NEW INDEX for deleted accounts
 userSchema.index({ isDeleted: 1 });
@@ -128,6 +138,79 @@ userSchema.methods.removeFriend = function (friendId) {
 
 userSchema.methods.isFriendsWith = function (userId) {
   return this.friends.some((friendId) => friendId.equals(userId));
+};
+
+// Blocking methods
+userSchema.methods.blockUser = function (userId) {
+  if (!this.blockedUsers.includes(userId)) {
+    this.blockedUsers.push(userId);
+    return this.save();
+  }
+  return Promise.resolve(this);
+};
+
+userSchema.methods.unblockUser = function (userId) {
+  this.blockedUsers = this.blockedUsers.filter((id) => !id.equals(userId));
+  return this.save();
+};
+
+userSchema.methods.isBlocked = function (userId) {
+  return this.blockedUsers.some((blockedId) => blockedId.equals(userId));
+};
+
+userSchema.methods.isBlockedBy = async function (userId) {
+  const user = await this.constructor.findById(userId);
+  return user ? user.isBlocked(this._id) : false;
+};
+
+// Method to update last seen
+userSchema.methods.updateLastSeen = function () {
+  this.lastSeen = new Date();
+  return this.save();
+};
+
+// Method to get formatted last seen
+userSchema.methods.getFormattedLastSeen = function () {
+  if (this.isOnline) {
+    return "online";
+  }
+  
+  const now = new Date();
+  const lastSeen = new Date(this.lastSeen);
+  const diffInMs = now - lastSeen;
+  const diffInMinutes = Math.floor(diffInMs / (1000 * 60));
+  const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
+  const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+  
+  if (diffInMinutes < 60) {
+    return `last seen today at ${diffInMinutes} ago`;
+  } else if (diffInHours < 6) {
+    return `last seen today at ${diffInHours} ago`;
+  } else if (diffInHours < 24) {
+    const hours = lastSeen.getHours().toString().padStart(2, '0');
+    const minutes = lastSeen.getMinutes().toString().padStart(2, '0');
+    return `last seen today at ${hours}:${minutes} ago`;
+  } else if (diffInDays === 1) {
+    const hours = lastSeen.getHours().toString().padStart(2, '0');
+    const minutes = lastSeen.getMinutes().toString().padStart(2, '0');
+    return `last seen yesterday at ${hours}:${minutes}`;
+  } else if (diffInDays < 7) {
+    const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const dayOfWeek = dayNames[lastSeen.getDay()];
+    const hours = lastSeen.getHours().toString().padStart(2, '0');
+    const minutes = lastSeen.getMinutes().toString().padStart(2, '0');
+    return `last seen on ${dayOfWeek} at ${hours}:${minutes}`;
+  } else {
+    const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'];
+    const dayOfWeek = dayNames[lastSeen.getDay()];
+    const day = lastSeen.getDate();
+    const month = monthNames[lastSeen.getMonth()];
+    const hours = lastSeen.getHours().toString().padStart(2, '0');
+    const minutes = lastSeen.getMinutes().toString().padStart(2, '0');
+    return `last seen on ${dayOfWeek}, ${day} ${month} at ${hours}:${minutes}`;
+  }
 };
 
 const User = mongoose.model("User", userSchema);
