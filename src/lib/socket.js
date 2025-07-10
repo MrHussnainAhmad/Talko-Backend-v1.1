@@ -112,7 +112,6 @@ io.on("connection", async (socket) => {
       });
     }
   });
-
   socket.on("refreshFriendsList", (userId) => {
     if (userId && userId !== "undefined") {
       const userSocketId = getReceiverSocketId(userId);
@@ -121,7 +120,17 @@ io.on("connection", async (socket) => {
           message: "Please refresh your friends list"
         });
       }
+
+      // Broadcast friend list update to all users
+      io.emit("friendListUpdated", { userId, message: "Friend list updated" });
     }
+  });
+
+  // Trigger profile updates
+  socket.on("profileChanged", (data) => {
+    const { userId, updatedProfile } = data;
+    // Emit profile updated event to all users
+    io.emit("profileUpdated", { userId, updatedProfile });
   });
 
   // Manual sync request

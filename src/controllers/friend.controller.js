@@ -4,6 +4,7 @@ import Message from "../models/Message.model.js";
 import mongoose from "mongoose";
 import { getReceiverSocketId, io } from "../lib/socket.js";
 import { removeFriendshipCompletely, getFriendshipStatus } from "../lib/RemoveFriend.js";
+import { sendNotification, NotificationTypes } from "../services/notification/notification.handler.js";
 
 export const sendFriendRequest = async (req, res) => {
   try {
@@ -58,6 +59,19 @@ export const sendFriendRequest = async (req, res) => {
     await newRequest.save();
     await newRequest.populate("senderId", "fullname username profilePic");
 
+    // Send notification for new friend request
+    const notificationTitle = `Friend request from ${sender.fullname}`;
+    const notificationBody = message || `You have received a friend request`;
+
+    await sendNotification({
+      userId: receiverId,
+      type: NotificationTypes.FRIEND_REQUEST,
+      title: notificationTitle,
+      body: notificationBody,
+      data: { senderId: senderId.toString(), requestId: newRequest._id.toString(), senderName: sender.fullname },
+      priority: 'normal'
+    });
+
     // Emit socket event for real-time notification
     const receiverSocketId = getReceiverSocketId(receiverId);
     if (receiverSocketId) {
@@ -107,6 +121,19 @@ export const acceptFriendRequest = async (req, res) => {
     await sender.addFriend(request.receiverId);
     await receiver.addFriend(request.senderId);
 
+    // Send notification for friend request acceptance
+    const acceptNotificationTitle = `Friend request accepted`;
+    const acceptNotificationBody = `${receiver.fullname} accepted your friend request`;
+
+    await sendNotification({
+      userId: request.senderId,
+      type: NotificationTypes.FRIEND_REQUEST_ACCEPTED,
+      title: acceptNotificationTitle,
+      body: acceptNotificationBody,
+      data: { friendId: request.receiverId.toString(), friendName: receiver.fullname },
+      priority: 'normal'
+    });
+
     // Emit socket event for real-time notification
     const senderSocketId = getReceiverSocketId(request.senderId);
     if (senderSocketId) {
@@ -131,6 +158,16 @@ export const acceptFriendRequest = async (req, res) => {
         message: "Friend request accepted"
       });
     }
+
+    // Emit friend list update to both users to refresh their friends lists immediately
+    io.to(senderSocketId).emit("friendListUpdated", { 
+      userId: request.senderId, 
+      message: "Friend added" 
+    });
+    io.to(receiverSocketId).emit("friendListUpdated", { 
+      userId: request.receiverId, 
+      message: "Friend added" 
+    });
 
     console.log(`✅ Friend request accepted: ${receiver.fullname} accepted ${sender.fullname}`);
     res.status(200).json({ message: "Friend request accepted" });
