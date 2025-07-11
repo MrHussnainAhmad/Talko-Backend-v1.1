@@ -545,7 +545,7 @@ export const getUserProfile = async (req, res) => {
 
     // Find user by ID with timeout
     const user = await Promise.race([
-      User.findById(userId).select('fullname username profilePic about createdAt isDeleted'),
+      User.findById(userId),
       new Promise((_, reject) =>
         setTimeout(() => reject(new Error("Database query timeout")), 10000)
       ),
