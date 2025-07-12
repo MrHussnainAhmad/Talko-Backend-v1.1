@@ -63,10 +63,10 @@ app.post('/api/test/realtime-notification', (req, res) => {
 server.listen(PORT, () => {
   console.log(`🚀 Server is running on http://localhost:${PORT}`);
   console.log(`📡 Frontend should connect to: http://localhost:${PORT}`);
-  console.log(`🌐 CORS enabled for: https://talkora-web-frontend-v1.vercel.app`);
-  console.log(`🔧 Local development CORS enabled for: http://localhost:5173`);
+  console.log(`🌐 CORS enabled for: ${process.env.FRONTEND_URL || 'https://talkora-web-frontend-v1.vercel.app'}`);
+  console.log(`🔧 Local development CORS enabled for: ${process.env.FRONTEND_LOCAL || 'http://localhost:5173'}`);
   console.log(`📱 React Native CORS enabled for: http://localhost:8081`);
-  console.log(`📱 React Native Mobile CORS enabled for: http://192.168.3.58:${PORT}`);
+  console.log(`📱 React Native Mobile CORS enabled for: ${process.env.REACT_NATIVE_CORS || 'http://192.168.3.58:3000'}`);
   
   // Initialize database
   connectDB();

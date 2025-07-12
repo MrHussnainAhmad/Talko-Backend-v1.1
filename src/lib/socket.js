@@ -13,6 +13,7 @@ const io = new Server(server, {
   cors: {
     origin: [
       "https://talkora-web-frontend-v1.vercel.app",
+      "http://localhost:5173",
       "exp://192.168.3.58:8081", // Expo development
       "http://localhost:8081", // Local development
       "http://192.168.3.58:8081", // Local network
