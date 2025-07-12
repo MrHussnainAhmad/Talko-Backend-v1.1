@@ -17,48 +17,50 @@ const refreshFriendsContactLists = async (userId1, userId2, type) => {
   try {
     console.log(`🔄 Refreshing friends' contact lists for ${type} between ${userId1} and ${userId2}`);
     
-    // Get friends of both users
-    const user1 = await User.findById(userId1).populate('friends', '_id');
-    const user2 = await User.findById(userId2).populate('friends', '_id');
+    // Get friends of both users with full user details
+    const user1 = await User.findById(userId1).populate('friends', '_id fullname username');
+    const user2 = await User.findById(userId2).populate('friends', '_id fullname username');
     
     if (!user1 || !user2) {
       console.error('❌ One or both users not found for contact list refresh');
       return;
     }
     
-    // Create set of all friends of both users (excluding the two users themselves)
-    const friendsToNotify = new Set();
+    // Create set of all users who need to refresh their contact lists
+    const usersToNotify = new Set();
     
-    // Add friends of user1
+    // Add all friends of user1 (they need to see updated status)
     user1.friends.forEach(friend => {
-      if (friend._id.toString() !== userId2) {
-        friendsToNotify.add(friend._id.toString());
-      }
+      usersToNotify.add(friend._id.toString());
     });
     
-    // Add friends of user2
+    // Add all friends of user2 (they need to see updated status)
     user2.friends.forEach(friend => {
-      if (friend._id.toString() !== userId1) {
-        friendsToNotify.add(friend._id.toString());
-      }
+      usersToNotify.add(friend._id.toString());
     });
     
-    // Also notify the two users themselves
-    friendsToNotify.add(userId1);
-    friendsToNotify.add(userId2);
+    // Add the two users themselves (they definitely need the update)
+    usersToNotify.add(userId1);
+    usersToNotify.add(userId2);
     
-    console.log(`📤 Notifying ${friendsToNotify.size} friends about ${type}`);
+    console.log(`📤 Notifying ${usersToNotify.size} users to refresh their contact lists due to ${type}`);
+    console.log(`📋 Users being notified: [${Array.from(usersToNotify).join(', ')}]`);
     
-    // Send refresh event to all friends
-    friendsToNotify.forEach(friendId => {
-      const friendSocketId = getReceiverSocketId(friendId);
-      if (friendSocketId) {
-        io.to(friendSocketId).emit('refreshContactsList', {
+    // Send refresh event to all relevant users
+    usersToNotify.forEach(userId => {
+      const userSocketId = getReceiverSocketId(userId);
+      if (userSocketId) {
+        io.to(userSocketId).emit('refreshContactsList', {
           type: type,
           userId1: userId1,
           userId2: userId2,
-          reason: 'friend_blocking_update'
+          blockedUserId: type === 'userBlocked' ? userId2 : null,
+          unblockedUserId: type === 'userUnblocked' ? userId2 : null,
+          reason: 'blocking_update'
         });
+        console.log(`📤 Sent refresh event to user ${userId}`);
+      } else {
+        console.log(`❌ No socket found for user ${userId}`);
       }
     });
     
