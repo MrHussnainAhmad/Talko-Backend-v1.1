@@ -1,4 +1,4 @@
-// Updated socket.js - Add account deletion handling
+// Updated socket.js - Add real-time blocking/unblocking system
 
 import { Server } from "socket.io";
 import http from "http";
@@ -112,6 +112,7 @@ io.on("connection", async (socket) => {
       });
     }
   });
+
   socket.on("refreshFriendsList", (userId) => {
     if (userId && userId !== "undefined") {
       const userSocketId = getReceiverSocketId(userId);
@@ -142,10 +143,104 @@ io.on("connection", async (socket) => {
     }
   });
 
+  // NEW: Real-time blocking system
+  socket.on("userBlocked", (data) => {
+    const { blockerId, blockedUserId, blockerName } = data;
+    
+    console.log(`🚫 User ${blockerId} blocked ${blockedUserId}`);
+    
+    // Notify the blocked user immediately
+    const blockedUserSocketId = getReceiverSocketId(blockedUserId);
+    if (blockedUserSocketId) {
+      io.to(blockedUserSocketId).emit("youWereBlocked", {
+        blockerId: blockerId,
+        blockerName: blockerName || "Someone",
+        timestamp: new Date()
+      });
+      console.log(`📤 Notified ${blockedUserId} that they were blocked by ${blockerId}`);
+    }
+    
+    // Notify the blocker to update their UI
+    const blockerSocketId = getReceiverSocketId(blockerId);
+    if (blockerSocketId) {
+      io.to(blockerSocketId).emit("blockActionConfirmed", {
+        action: "blocked",
+        targetUserId: blockedUserId,
+        timestamp: new Date()
+      });
+      console.log(`📤 Confirmed block action to ${blockerId}`);
+    }
+    
+    // Force both users to refresh their friends/contacts lists
+    [blockerId, blockedUserId].forEach(userId => {
+      const userSocketId = getReceiverSocketId(userId);
+      if (userSocketId) {
+        io.to(userSocketId).emit("refreshContactsList", {
+          reason: "blocking_update",
+          affectedUserId: userId === blockerId ? blockedUserId : blockerId
+        });
+      }
+    });
+  });
+
+  socket.on("userUnblocked", (data) => {
+    const { unblockerId, unblockedUserId, unblockerName } = data;
+    
+    console.log(`✅ User ${unblockerId} unblocked ${unblockedUserId}`);
+    
+    // Notify the unblocked user immediately
+    const unblockedUserSocketId = getReceiverSocketId(unblockedUserId);
+    if (unblockedUserSocketId) {
+      io.to(unblockedUserSocketId).emit("youWereUnblocked", {
+        unblockerId: unblockerId,
+        unblockerName: unblockerName || "Someone",
+        timestamp: new Date()
+      });
+      console.log(`📤 Notified ${unblockedUserId} that they were unblocked by ${unblockerId}`);
+    }
+    
+    // Notify the unblocker to update their UI
+    const unblockerSocketId = getReceiverSocketId(unblockerId);
+    if (unblockerSocketId) {
+      io.to(unblockerSocketId).emit("blockActionConfirmed", {
+        action: "unblocked",
+        targetUserId: unblockedUserId,
+        timestamp: new Date()
+      });
+      console.log(`📤 Confirmed unblock action to ${unblockerId}`);
+    }
+    
+    // Force both users to refresh their friends/contacts lists
+    [unblockerId, unblockedUserId].forEach(userId => {
+      const userSocketId = getReceiverSocketId(userId);
+      if (userSocketId) {
+        io.to(userSocketId).emit("refreshContactsList", {
+          reason: "unblocking_update",
+          affectedUserId: userId === unblockerId ? unblockedUserId : unblockerId
+        });
+      }
+    });
+  });
+
+  // Handle blocking status check requests
+  socket.on("checkBlockStatus", (data) => {
+    const { requesterId, targetUserId } = data;
+    
+    // This would typically involve a database query
+    // For now, just acknowledge the request
+    const requesterSocketId = getReceiverSocketId(requesterId);
+    if (requesterSocketId) {
+      io.to(requesterSocketId).emit("blockStatusChecked", {
+        targetUserId: targetUserId,
+        timestamp: new Date()
+      });
+    }
+  });
+
   // sendMessage socket event removed - messages are sent via API
   // The API controller handles saving to DB and emitting via Socket.IO
 
-  // NEW: Handle account deletion notification
+  // Handle account deletion notification
   socket.on("accountDeleted", (data) => {
     const { deletedUserId, affectedUserIds } = data;
     
