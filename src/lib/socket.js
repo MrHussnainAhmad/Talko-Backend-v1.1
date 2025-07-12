@@ -28,7 +28,9 @@ const io = new Server(server, {
   transports: ['polling', 'websocket'],
 });
 
-const userSocketMap = {}; // {userId: socketId}
+// Support multiple connections per user (web + mobile)
+const userSocketMap = {}; // {userId: [socketId1, socketId2, ...]}
+const socketUserMap = {}; // {socketId: userId} for quick reverse lookup
 
 // Function to get current online users
 const getOnlineUsers = () => {
@@ -59,9 +61,19 @@ io.on("connection", async (socket) => {
   
   const userId = socket.handshake.query.userId;
   if (userId && userId !== "undefined") {
-    // Add user to the socket map
-    userSocketMap[userId] = socket.id;
-    console.log(`User ${userId} connected with socket ${socket.id}`);
+    // Add reverse mapping
+    socketUserMap[socket.id] = userId;
+    
+    // Initialize user's socket array if not exists
+    if (!userSocketMap[userId]) {
+      userSocketMap[userId] = [];
+    }
+    
+    // Add socket to user's socket array if not already present
+    if (!userSocketMap[userId].includes(socket.id)) {
+      userSocketMap[userId].push(socket.id);
+      console.log(`User ${userId} connected with socket ${socket.id}. Active sockets: [${userSocketMap[userId].join(', ')}]`);
+    }
     
     // Update user's online status in database
     try {
@@ -255,37 +267,52 @@ io.on("connection", async (socket) => {
   socket.on("disconnect", async () => {
     console.log("User disconnected: " + socket.id);
     
-    const disconnectedUserId = Object.keys(userSocketMap).find(
-      key => userSocketMap[key] === socket.id
-    );
+    // Get the userId from the reverse mapping
+    const disconnectedUserId = socketUserMap[socket.id];
     
     if (disconnectedUserId) {
-      // Remove user from socket map
-      delete userSocketMap[disconnectedUserId];
-      console.log(`User ${disconnectedUserId} went offline`);
-      
-      // Update user's offline status and lastSeen in database
-      try {
-        await connectDB();
-        await User.findByIdAndUpdate(disconnectedUserId, { 
-          isOnline: false, 
-          lastSeen: new Date() 
-        });
-        console.log(`✅ User ${disconnectedUserId} offline status updated in database`);
-      } catch (error) {
-        console.error(`❌ Failed to update offline status for user ${disconnectedUserId}:`, error.message);
+      // Remove the socket from the user's socket array
+      if (userSocketMap[disconnectedUserId]) {
+        userSocketMap[disconnectedUserId] = userSocketMap[disconnectedUserId].filter(
+          socketId => socketId !== socket.id
+        );
+        
+        console.log(`Socket ${socket.id} removed from user ${disconnectedUserId}. Remaining sockets: [${userSocketMap[disconnectedUserId].join(', ')}]`);
+        
+        // Only mark user as offline if they have no more active sockets
+        if (userSocketMap[disconnectedUserId].length === 0) {
+          delete userSocketMap[disconnectedUserId];
+          console.log(`User ${disconnectedUserId} went offline - no more active sockets`);
+          
+          // Update user's offline status and lastSeen in database
+          try {
+            await connectDB();
+            await User.findByIdAndUpdate(disconnectedUserId, { 
+              isOnline: false, 
+              lastSeen: new Date() 
+            });
+            console.log(`✅ User ${disconnectedUserId} offline status updated in database`);
+          } catch (error) {
+            console.error(`❌ Failed to update offline status for user ${disconnectedUserId}:`, error.message);
+          }
+          
+          // Broadcast updated online users list to ALL remaining users
+          broadcastOnlineUsers();
+          
+          // Also emit user status update
+          socket.broadcast.emit("userStatusUpdate", {
+            userId: disconnectedUserId,
+            isOnline: false
+          });
+          
+          console.log(`User ${disconnectedUserId} disconnected, broadcasting to all clients`);
+        } else {
+          console.log(`User ${disconnectedUserId} still has ${userSocketMap[disconnectedUserId].length} active socket(s), keeping online`);
+        }
       }
       
-      // Broadcast updated online users list to ALL remaining users
-      broadcastOnlineUsers();
-      
-      // Also emit user status update
-      socket.broadcast.emit("userStatusUpdate", {
-        userId: disconnectedUserId,
-        isOnline: false
-      });
-      
-      console.log(`User ${disconnectedUserId} disconnected, broadcasting to all clients`);
+      // Remove from reverse mapping
+      delete socketUserMap[socket.id];
     }
   });
 
