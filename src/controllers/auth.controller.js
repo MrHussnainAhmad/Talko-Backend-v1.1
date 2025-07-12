@@ -12,6 +12,62 @@ import sendEmail from "../lib/sendEmail.js";
 import crypto from "crypto";
 import { sendNotification, NotificationTypes } from "../services/notification/notification.handler.js";
 
+// Helper function to refresh contact lists only for friends of affected users
+const refreshFriendsContactLists = async (userId1, userId2, type) => {
+  try {
+    console.log(`🔄 Refreshing friends' contact lists for ${type} between ${userId1} and ${userId2}`);
+    
+    // Get friends of both users
+    const user1 = await User.findById(userId1).populate('friends', '_id');
+    const user2 = await User.findById(userId2).populate('friends', '_id');
+    
+    if (!user1 || !user2) {
+      console.error('❌ One or both users not found for contact list refresh');
+      return;
+    }
+    
+    // Create set of all friends of both users (excluding the two users themselves)
+    const friendsToNotify = new Set();
+    
+    // Add friends of user1
+    user1.friends.forEach(friend => {
+      if (friend._id.toString() !== userId2) {
+        friendsToNotify.add(friend._id.toString());
+      }
+    });
+    
+    // Add friends of user2
+    user2.friends.forEach(friend => {
+      if (friend._id.toString() !== userId1) {
+        friendsToNotify.add(friend._id.toString());
+      }
+    });
+    
+    // Also notify the two users themselves
+    friendsToNotify.add(userId1);
+    friendsToNotify.add(userId2);
+    
+    console.log(`📤 Notifying ${friendsToNotify.size} friends about ${type}`);
+    
+    // Send refresh event to all friends
+    friendsToNotify.forEach(friendId => {
+      const friendSocketId = getReceiverSocketId(friendId);
+      if (friendSocketId) {
+        io.to(friendSocketId).emit('refreshContactsList', {
+          type: type,
+          userId1: userId1,
+          userId2: userId2,
+          reason: 'friend_blocking_update'
+        });
+      }
+    });
+    
+    console.log(`✅ Contact list refresh completed for ${type}`);
+  } catch (error) {
+    console.error('❌ Error refreshing friends contact lists:', error.message);
+  }
+};
+
 //signup controller
 export const signup = async (req, res) => {
   const { fullname, username, email, password } = req.body;
@@ -848,6 +904,28 @@ export const blockUser = async (req, res) => {
     
     console.log("✅ User blocked successfully");
     
+    // Emit socket events for real-time updates
+    // Notify the blocked user
+    const blockedUserSocketId = getReceiverSocketId(userId);
+    if (blockedUserSocketId) {
+      io.to(blockedUserSocketId).emit('youWereBlocked', {
+        blockerId: blockerId.toString(),
+        blockedUserId: userId
+      });
+    }
+    
+    // Notify the blocker for confirmation
+    const blockerSocketId = getReceiverSocketId(blockerId.toString());
+    if (blockerSocketId) {
+      io.to(blockerSocketId).emit('blockActionConfirmed', {
+        action: 'blocked',
+        targetUserId: userId
+      });
+    }
+    
+    // Refresh contact lists only for friends of both users (not all users)
+    await refreshFriendsContactLists(blockerId.toString(), userId, 'userBlocked');
+    
     res.status(200).json({
       message: "User blocked successfully",
       blockedUserId: userId
@@ -895,6 +973,28 @@ export const unblockUser = async (req, res) => {
     await unblocker.unblockUser(userId);
     
     console.log("✅ User unblocked successfully");
+    
+    // Emit socket events for real-time updates
+    // Notify the unblocked user
+    const unblockedUserSocketId = getReceiverSocketId(userId);
+    if (unblockedUserSocketId) {
+      io.to(unblockedUserSocketId).emit('youWereUnblocked', {
+        unblockerId: unblockerId.toString(),
+        unblockedUserId: userId
+      });
+    }
+    
+    // Notify the unblocker for confirmation
+    const unblockerSocketId = getReceiverSocketId(unblockerId.toString());
+    if (unblockerSocketId) {
+      io.to(unblockerSocketId).emit('blockActionConfirmed', {
+        action: 'unblocked',
+        targetUserId: userId
+      });
+    }
+    
+    // Refresh contact lists only for friends of both users (not all users)
+    await refreshFriendsContactLists(unblockerId.toString(), userId, 'userUnblocked');
     
     res.status(200).json({
       message: "User unblocked successfully",

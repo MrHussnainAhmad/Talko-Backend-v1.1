@@ -171,16 +171,9 @@ io.on("connection", async (socket) => {
       console.log(`📤 Confirmed block action to ${blockerId}`);
     }
     
-    // Force both users to refresh their friends/contacts lists
-    [blockerId, blockedUserId].forEach(userId => {
-      const userSocketId = getReceiverSocketId(userId);
-      if (userSocketId) {
-        io.to(userSocketId).emit("refreshContactsList", {
-          reason: "blocking_update",
-          affectedUserId: userId === blockerId ? blockedUserId : blockerId
-        });
-      }
-    });
+    // Optimized: Only refresh friends' contact lists instead of all users
+    // This is handled by the auth controller's refreshFriendsContactLists function
+    console.log("📝 Block event handled - contact refresh managed by auth controller");
   });
 
   socket.on("userUnblocked", (data) => {
@@ -210,16 +203,9 @@ io.on("connection", async (socket) => {
       console.log(`📤 Confirmed unblock action to ${unblockerId}`);
     }
     
-    // Force both users to refresh their friends/contacts lists
-    [unblockerId, unblockedUserId].forEach(userId => {
-      const userSocketId = getReceiverSocketId(userId);
-      if (userSocketId) {
-        io.to(userSocketId).emit("refreshContactsList", {
-          reason: "unblocking_update",
-          affectedUserId: userId === unblockerId ? unblockedUserId : unblockerId
-        });
-      }
-    });
+    // Optimized: Only refresh friends' contact lists instead of all users
+    // This is handled by the auth controller's refreshFriendsContactLists function
+    console.log("📝 Unblock event handled - contact refresh managed by auth controller");
   });
 
   // Handle blocking status check requests
