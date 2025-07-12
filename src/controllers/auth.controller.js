@@ -147,7 +147,7 @@ export const signup = async (req, res) => {
     console.log("✅ Email verification token saved");
 
     // Send verification email
-    const verificationUrl = `${process.env.BACKEND_URL || process.env.BACKEND_LOCAL}/api/auth/verify-email/${verificationToken}`;
+    const verificationUrl = `https://talkora-private-chat.up.railway.app/api/auth/verify-email/${verificationToken}`;
     const emailSubject = "Email Verification";
     const emailText = `
       Hi ${fullname},
@@ -332,7 +332,7 @@ export const resendVerificationEmail = async (req, res) => {
     console.log("✅ New email verification token saved");
 
     // Send verification email
-    const verificationUrl = `${process.env.BASE_URL}/api/auth/verify-email/${verificationToken}`;
+    const verificationUrl = `https://talkora-private-chat.up.railway.app/api/auth/verify-email/${verificationToken}`;
     const emailSubject = "Email Verification - Resent";
     const emailText = `
       Hi ${user.fullname},
