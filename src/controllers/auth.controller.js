@@ -365,7 +365,7 @@ export const resendVerificationEmail = async (req, res) => {
 
 //Login controller
 export const login = async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password, fcmToken, platform, deviceId } = req.body;
 
   try {
     console.log("🔐 Login attempt for:", email);
@@ -411,6 +411,40 @@ export const login = async (req, res) => {
       });
     }
 
+    // Handle FCM token registration for auto-enabled notifications
+    if (fcmToken && platform && deviceId) {
+      try {
+        // Check if device already exists
+        const existingTokenIndex = user.fcmTokens.findIndex(
+          token => token.deviceId === deviceId
+        );
+
+        if (existingTokenIndex !== -1) {
+          // Update existing token
+          user.fcmTokens[existingTokenIndex] = {
+            token: fcmToken,
+            platform: platform,
+            deviceId: deviceId,
+            createdAt: new Date()
+          };
+        } else {
+          // Add new token
+          user.fcmTokens.push({
+            token: fcmToken,
+            platform: platform,
+            deviceId: deviceId,
+            createdAt: new Date()
+          });
+        }
+
+        await user.save();
+        console.log("✅ FCM token registered for auto-enabled notifications");
+      } catch (tokenError) {
+        console.error("❌ FCM token registration error:", tokenError.message);
+        // Don't fail login if token registration fails
+      }
+    }
+
     // Generate token AFTER verification check
     genToken(user._id, res);
 
@@ -426,6 +460,7 @@ export const login = async (req, res) => {
       about: user.about,
       createdAt: user.createdAt,
       isVerified: user.isVerified,
+      fcmEnabled: !!(fcmToken && platform && deviceId),
     });
   } catch (error) {
     console.error("❌ Login error:", error.message);
@@ -1130,6 +1165,100 @@ export const checkBlockStatus = async (req, res) => {
     });
   } catch (error) {
     console.error("❌ Check block status error:", error.message);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+// Update FCM Token
+export const updateFcmToken = async (req, res) => {
+  try {
+    console.log("🔔 FCM token update request for user:", req.user._id);
+    
+    const { fcmToken, platform, deviceId } = req.body;
+    const userId = req.user._id;
+    
+    if (!fcmToken || !platform || !deviceId) {
+      return res.status(400).json({
+        message: "FCM token, platform, and device ID are required"
+      });
+    }
+    
+    await connectDB();
+    
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    
+    // Check if device already exists
+    const existingTokenIndex = user.fcmTokens.findIndex(
+      token => token.deviceId === deviceId
+    );
+    
+    if (existingTokenIndex !== -1) {
+      // Update existing token
+      user.fcmTokens[existingTokenIndex] = {
+        token: fcmToken,
+        platform: platform,
+        deviceId: deviceId,
+        createdAt: new Date()
+      };
+    } else {
+      // Add new token
+      user.fcmTokens.push({
+        token: fcmToken,
+        platform: platform,
+        deviceId: deviceId,
+        createdAt: new Date()
+      });
+    }
+    
+    await user.save();
+    
+    console.log("✅ FCM token updated successfully");
+    
+    res.status(200).json({
+      message: "FCM token updated successfully",
+      fcmEnabled: true
+    });
+  } catch (error) {
+    console.error("❌ FCM token update error:", error.message);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+// Remove FCM Token
+export const removeFcmToken = async (req, res) => {
+  try {
+    console.log("🔕 FCM token removal request for user:", req.user._id);
+    
+    const { deviceId } = req.body;
+    const userId = req.user._id;
+    
+    if (!deviceId) {
+      return res.status(400).json({
+        message: "Device ID is required"
+      });
+    }
+    
+    await connectDB();
+    
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    
+    // Remove token for the specific device
+    user.fcmTokens = user.fcmTokens.filter(token => token.deviceId !== deviceId);
+    await user.save();
+    
+    console.log("✅ FCM token removed successfully");
+    
+    res.status(200).json({
+      message: "FCM token removed successfully"
+    });
+  } catch (error) {
+    console.error("❌ FCM token removal error:", error.message);
     res.status(500).json({ message: "Internal server error" });
   }
 };

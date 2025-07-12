@@ -1,6 +1,14 @@
 // Notification Routes
 import express from 'express';
 import { protectRoute } from '../middleware/auth.middleware.js';
+import {
+  markMessageAsRead,
+  replyFromNotification,
+  getUnreadNotificationsCount,
+  getUserNotifications,
+  markNotificationAsRead,
+  clearAllNotifications
+} from '../controllers/notification.controller.js';
 import User from '../models/User.model.js';
 import { sendNotification, NotificationTypes, getNotificationMetrics, resetNotificationMetrics } from '../services/notification/notification.handler.js';
 import { NOTIFICATION_FEATURES } from '../services/notification/firebase.config.js';
@@ -199,5 +207,25 @@ router.post('/metrics/reset', protectRoute, async (req, res) => {
     res.status(500).json({ error: 'Failed to reset metrics' });
   }
 });
+
+// NEW NOTIFICATION ACTION ROUTES (WhatsApp-style)
+
+// Mark message as read from notification action
+router.post('/actions/mark-read', protectRoute, markMessageAsRead);
+
+// Reply from notification action
+router.post('/actions/reply', protectRoute, replyFromNotification);
+
+// Get unread notifications count
+router.get('/count/unread', protectRoute, getUnreadNotificationsCount);
+
+// Get all user notifications with pagination
+router.get('/user', protectRoute, getUserNotifications);
+
+// Mark specific notification as read
+router.put('/mark-read/:notificationId', protectRoute, markNotificationAsRead);
+
+// Clear all notifications
+router.delete('/clear-all', protectRoute, clearAllNotifications);
 
 export default router;
