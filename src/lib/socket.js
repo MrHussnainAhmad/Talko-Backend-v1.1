@@ -53,7 +53,20 @@ setInterval(() => {
 }, 5000); // 5 seconds
 
 export const getReceiverSocketId = (receiverId) => {
-  return userSocketMap[receiverId];
+  return userSocketMap[receiverId] || [];
+};
+
+// Helper function to emit to all sockets of a user
+const emitToAllUserSockets = (userId, event, data) => {
+  const socketIds = getReceiverSocketId(userId);
+  if (socketIds && socketIds.length > 0) {
+    socketIds.forEach(socketId => {
+      io.to(socketId).emit(event, data);
+    });
+    console.log(`📤 Emitted '${event}' to all ${socketIds.length} sockets of user ${userId}`);
+    return true;
+  }
+  return false;
 };
 
 io.on("connection", async (socket) => {
@@ -97,22 +110,16 @@ io.on("connection", async (socket) => {
   }
 
   socket.on("typing", (data) => {
-    const receiverSocketId = getReceiverSocketId(data.receiverId);
-    if (receiverSocketId) {
-      io.to(receiverSocketId).emit("userTyping", {
-        senderId: data.senderId,
-        senderName: data.senderName
-      });
-    }
+    emitToAllUserSockets(data.receiverId, "userTyping", {
+      senderId: data.senderId,
+      senderName: data.senderName
+    });
   });
 
   socket.on("stopTyping", (data) => {
-    const receiverSocketId = getReceiverSocketId(data.receiverId);
-    if (receiverSocketId) {
-      io.to(receiverSocketId).emit("userStoppedTyping", {
-        senderId: data.senderId
-      });
-    }
+    emitToAllUserSockets(data.receiverId, "userStoppedTyping", {
+      senderId: data.senderId
+    });
   });
 
   socket.on("userOnline", (userId) => {
