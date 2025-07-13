@@ -186,35 +186,80 @@ export const sendMessage = async (req, res) => {
 
     await newMessage.save();
 
-    // Send notification for new message
-    const notificationTitle = `New message from ${sender.fullname}`;
-    const notificationBody = text || 'You have received a new image message';
-
-    await sendNotification({
-      userId: receiverId,
-      type: NotificationTypes.NEW_MESSAGE,
-      title: notificationTitle,
-      body: notificationBody,
-      data: { senderId: senderId.toString(), messageId: newMessage._id.toString(), senderName: sender.fullname },
-      priority: 'high'
-    });
-
-    // Emit real-time message to receiver
-    const receiverSocketId = getReceiverSocketId(receiverId);
+    // Check if receiver is currently in the same chat (to avoid notification if they're actively chatting)
+    const receiverSocketId = getReceiverSocketId(receiverId.toString());
+    const isReceiverInCurrentChat = receiverSocketId && io.sockets.sockets.get(receiverSocketId)?.currentChatId === conversationId;
+    
+    // Send real-time message to receiver (all receiver's sockets)
     if (receiverSocketId) {
-      io.to(receiverSocketId).emit("newMessage", newMessage);
-      // Emit messageReceived event for notification sound
-      io.to(receiverSocketId).emit("messageReceived", newMessage);
+      // Handle multiple sockets per user
+      if (Array.isArray(receiverSocketId)) {
+        receiverSocketId.forEach(socketId => {
+          io.to(socketId).emit('newMessage', newMessage);
+        });
+      } else {
+        io.to(receiverSocketId).emit('newMessage', newMessage);
+      }
+      
+      // If receiver is in the same chat, no notification needed
+      if (isReceiverInCurrentChat) {
+        console.log(`📱 Message delivered via socket, no notification sent (user in same chat)`);
+      }
+    }
+    
+    // IMPORTANT: Also emit to sender for instant UI update
+    const senderSocketIds = getReceiverSocketId(senderId.toString());
+    if (senderSocketIds) {
+      // Handle multiple sockets per user
+      if (Array.isArray(senderSocketIds)) {
+        senderSocketIds.forEach(socketId => {
+          io.to(socketId).emit('newMessage', newMessage);
+        });
+      } else {
+        io.to(senderSocketIds).emit('newMessage', newMessage);
+      }
+    }
+    
+    // Send enhanced notification only if receiver is offline or not in the same chat
+    if (!receiverSocketId || !isReceiverInCurrentChat) {
+      const notificationTitle = sender.fullname;
+      const notificationBody = text || 'Image';
+      
+      await sendNotification({
+        userId: receiverId,
+        type: NotificationTypes.NEW_MESSAGE,
+        title: notificationTitle,
+        body: notificationBody,
+        data: {
+          senderId: senderId.toString(),
+          senderName: sender.fullname,
+          senderProfilePic: sender.profilePic || '',
+          messageId: newMessage._id.toString(),
+          conversationId: conversationId,
+          messageType: newMessage.messageType,
+          attachmentUrl: imageUrl || null,
+          timestamp: newMessage.createdAt.toISOString()
+        },
+        priority: 'high'
+      });
     }
 
-    // Also emit to sender for confirmation (useful for multiple device scenarios)
-    const senderSocketId = getReceiverSocketId(senderId);
-    if (senderSocketId) {
-      io.to(senderSocketId).emit("messageSent", {
+    // Also emit confirmation to sender (useful for multiple device scenarios)
+    if (senderSocketIds) {
+      const confirmationData = {
         messageId: newMessage._id,
         receiverId: receiverId,
-        status: "delivered"
-      });
+        status: "delivered",
+        timestamp: new Date()
+      };
+      
+      if (Array.isArray(senderSocketIds)) {
+        senderSocketIds.forEach(socketId => {
+          io.to(socketId).emit("messageSent", confirmationData);
+        });
+      } else {
+        io.to(senderSocketIds).emit("messageSent", confirmationData);
+      }
     }
 
     res.status(200).json(newMessage);

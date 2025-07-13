@@ -66,7 +66,7 @@ server.listen(PORT, () => {
   console.log(`🌐 CORS enabled for: https://talkora-web-frontend-v1.vercel.app`);
   console.log(`🔧 Local development CORS enabled for: http://localhost:5173`);
   console.log(`📱 React Native CORS enabled for: http://localhost:8081`);
-  console.log(`📱 React Native Mobile CORS enabled for: http://192.168.3.58:${PORT}`);
+  console.log(`📱 React Native Mobile CORS enabled for: http://192.168.3.58:3000`);
   
   // Initialize database
   connectDB();

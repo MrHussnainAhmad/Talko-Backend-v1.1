@@ -12,6 +12,64 @@ import sendEmail from "../lib/sendEmail.js";
 import crypto from "crypto";
 import { sendNotification, NotificationTypes } from "../services/notification/notification.handler.js";
 
+// Helper function to refresh contact lists only for friends of affected users
+const refreshFriendsContactLists = async (userId1, userId2, type) => {
+  try {
+    console.log(`🔄 Refreshing friends' contact lists for ${type} between ${userId1} and ${userId2}`);
+    
+    // Get friends of both users with full user details
+    const user1 = await User.findById(userId1).populate('friends', '_id fullname username');
+    const user2 = await User.findById(userId2).populate('friends', '_id fullname username');
+    
+    if (!user1 || !user2) {
+      console.error('❌ One or both users not found for contact list refresh');
+      return;
+    }
+    
+    // Create set of all users who need to refresh their contact lists
+    const usersToNotify = new Set();
+    
+    // Add all friends of user1 (they need to see updated status)
+    user1.friends.forEach(friend => {
+      usersToNotify.add(friend._id.toString());
+    });
+    
+    // Add all friends of user2 (they need to see updated status)
+    user2.friends.forEach(friend => {
+      usersToNotify.add(friend._id.toString());
+    });
+    
+    // Add the two users themselves (they definitely need the update)
+    usersToNotify.add(userId1);
+    usersToNotify.add(userId2);
+    
+    console.log(`📤 Notifying ${usersToNotify.size} users to refresh their contact lists due to ${type}`);
+    console.log(`📋 Users being notified: [${Array.from(usersToNotify).join(', ')}]`);
+    
+    // Send refresh event to all relevant users
+    usersToNotify.forEach(userId => {
+      const userSocketId = getReceiverSocketId(userId);
+      if (userSocketId) {
+        io.to(userSocketId).emit('refreshContactsList', {
+          type: type,
+          userId1: userId1,
+          userId2: userId2,
+          blockedUserId: type === 'userBlocked' ? userId2 : null,
+          unblockedUserId: type === 'userUnblocked' ? userId2 : null,
+          reason: 'blocking_update'
+        });
+        console.log(`📤 Sent refresh event to user ${userId}`);
+      } else {
+        console.log(`❌ No socket found for user ${userId}`);
+      }
+    });
+    
+    console.log(`✅ Contact list refresh completed for ${type}`);
+  } catch (error) {
+    console.error('❌ Error refreshing friends contact lists:', error.message);
+  }
+};
+
 //signup controller
 export const signup = async (req, res) => {
   const { fullname, username, email, password } = req.body;
@@ -274,7 +332,7 @@ export const resendVerificationEmail = async (req, res) => {
     console.log("✅ New email verification token saved");
 
     // Send verification email
-    const verificationUrl = `${process.env.BASE_URL}/api/auth/verify-email/${verificationToken}`;
+    const verificationUrl = `https://talkora-private-chat.up.railway.app/api/auth/verify-email/${verificationToken}`;
     const emailSubject = "Email Verification - Resent";
     const emailText = `
       Hi ${user.fullname},
@@ -307,7 +365,7 @@ export const resendVerificationEmail = async (req, res) => {
 
 //Login controller
 export const login = async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password, fcmToken, platform, deviceId } = req.body;
 
   try {
     console.log("🔐 Login attempt for:", email);
@@ -353,6 +411,40 @@ export const login = async (req, res) => {
       });
     }
 
+    // Handle FCM token registration for auto-enabled notifications
+    if (fcmToken && platform && deviceId) {
+      try {
+        // Check if device already exists
+        const existingTokenIndex = user.fcmTokens.findIndex(
+          token => token.deviceId === deviceId
+        );
+
+        if (existingTokenIndex !== -1) {
+          // Update existing token
+          user.fcmTokens[existingTokenIndex] = {
+            token: fcmToken,
+            platform: platform,
+            deviceId: deviceId,
+            createdAt: new Date()
+          };
+        } else {
+          // Add new token
+          user.fcmTokens.push({
+            token: fcmToken,
+            platform: platform,
+            deviceId: deviceId,
+            createdAt: new Date()
+          });
+        }
+
+        await user.save();
+        console.log("✅ FCM token registered for auto-enabled notifications");
+      } catch (tokenError) {
+        console.error("❌ FCM token registration error:", tokenError.message);
+        // Don't fail login if token registration fails
+      }
+    }
+
     // Generate token AFTER verification check
     genToken(user._id, res);
 
@@ -368,6 +460,7 @@ export const login = async (req, res) => {
       about: user.about,
       createdAt: user.createdAt,
       isVerified: user.isVerified,
+      fcmEnabled: !!(fcmToken && platform && deviceId),
     });
   } catch (error) {
     console.error("❌ Login error:", error.message);
@@ -848,6 +941,28 @@ export const blockUser = async (req, res) => {
     
     console.log("✅ User blocked successfully");
     
+    // Emit socket events for real-time updates
+    // Notify the blocked user
+    const blockedUserSocketId = getReceiverSocketId(userId);
+    if (blockedUserSocketId) {
+      io.to(blockedUserSocketId).emit('youWereBlocked', {
+        blockerId: blockerId.toString(),
+        blockedUserId: userId
+      });
+    }
+    
+    // Notify the blocker for confirmation
+    const blockerSocketId = getReceiverSocketId(blockerId.toString());
+    if (blockerSocketId) {
+      io.to(blockerSocketId).emit('blockActionConfirmed', {
+        action: 'blocked',
+        targetUserId: userId
+      });
+    }
+    
+    // Refresh contact lists only for friends of both users (not all users)
+    await refreshFriendsContactLists(blockerId.toString(), userId, 'userBlocked');
+    
     res.status(200).json({
       message: "User blocked successfully",
       blockedUserId: userId
@@ -895,6 +1010,28 @@ export const unblockUser = async (req, res) => {
     await unblocker.unblockUser(userId);
     
     console.log("✅ User unblocked successfully");
+    
+    // Emit socket events for real-time updates
+    // Notify the unblocked user
+    const unblockedUserSocketId = getReceiverSocketId(userId);
+    if (unblockedUserSocketId) {
+      io.to(unblockedUserSocketId).emit('youWereUnblocked', {
+        unblockerId: unblockerId.toString(),
+        unblockedUserId: userId
+      });
+    }
+    
+    // Notify the unblocker for confirmation
+    const unblockerSocketId = getReceiverSocketId(unblockerId.toString());
+    if (unblockerSocketId) {
+      io.to(unblockerSocketId).emit('blockActionConfirmed', {
+        action: 'unblocked',
+        targetUserId: userId
+      });
+    }
+    
+    // Refresh contact lists only for friends of both users (not all users)
+    await refreshFriendsContactLists(unblockerId.toString(), userId, 'userUnblocked');
     
     res.status(200).json({
       message: "User unblocked successfully",
@@ -1028,6 +1165,100 @@ export const checkBlockStatus = async (req, res) => {
     });
   } catch (error) {
     console.error("❌ Check block status error:", error.message);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+// Update FCM Token
+export const updateFcmToken = async (req, res) => {
+  try {
+    console.log("🔔 FCM token update request for user:", req.user._id);
+    
+    const { fcmToken, platform, deviceId } = req.body;
+    const userId = req.user._id;
+    
+    if (!fcmToken || !platform || !deviceId) {
+      return res.status(400).json({
+        message: "FCM token, platform, and device ID are required"
+      });
+    }
+    
+    await connectDB();
+    
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    
+    // Check if device already exists
+    const existingTokenIndex = user.fcmTokens.findIndex(
+      token => token.deviceId === deviceId
+    );
+    
+    if (existingTokenIndex !== -1) {
+      // Update existing token
+      user.fcmTokens[existingTokenIndex] = {
+        token: fcmToken,
+        platform: platform,
+        deviceId: deviceId,
+        createdAt: new Date()
+      };
+    } else {
+      // Add new token
+      user.fcmTokens.push({
+        token: fcmToken,
+        platform: platform,
+        deviceId: deviceId,
+        createdAt: new Date()
+      });
+    }
+    
+    await user.save();
+    
+    console.log("✅ FCM token updated successfully");
+    
+    res.status(200).json({
+      message: "FCM token updated successfully",
+      fcmEnabled: true
+    });
+  } catch (error) {
+    console.error("❌ FCM token update error:", error.message);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+// Remove FCM Token
+export const removeFcmToken = async (req, res) => {
+  try {
+    console.log("🔕 FCM token removal request for user:", req.user._id);
+    
+    const { deviceId } = req.body;
+    const userId = req.user._id;
+    
+    if (!deviceId) {
+      return res.status(400).json({
+        message: "Device ID is required"
+      });
+    }
+    
+    await connectDB();
+    
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    
+    // Remove token for the specific device
+    user.fcmTokens = user.fcmTokens.filter(token => token.deviceId !== deviceId);
+    await user.save();
+    
+    console.log("✅ FCM token removed successfully");
+    
+    res.status(200).json({
+      message: "FCM token removed successfully"
+    });
+  } catch (error) {
+    console.error("❌ FCM token removal error:", error.message);
     res.status(500).json({ message: "Internal server error" });
   }
 };

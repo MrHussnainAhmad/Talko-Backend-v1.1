@@ -83,20 +83,82 @@ export const sendNotification = async ({
       const user = await User.findById(userId).select('fcmTokens');
       
       if (user && user.fcmTokens && user.fcmTokens.length > 0) {
-        // Send push notification
+        // Enhanced payload for WhatsApp-style notifications
         const payload = {
           notification: {
             title,
             body,
-            click_action: 'OPEN_APP',
-            sound: 'default'
+            click_action: 'OPEN_CHAT',
+            sound: 'default',
+            icon: data.senderProfilePic || '/default-avatar.png',
+            image: data.attachmentUrl || null
           },
           data: {
             type,
+            action: 'open_chat',
+            chatId: data.conversationId || '',
+            messageId: data.messageId || '',
+            senderId: data.senderId || '',
+            senderName: data.senderName || '',
+            senderProfilePic: data.senderProfilePic || '',
+            // Enable notification actions
+            actions: JSON.stringify([
+              {
+                action: 'mark_read',
+                title: 'Mark as read',
+                icon: 'ic_mark_read'
+              },
+              {
+                action: 'reply',
+                title: 'Reply',
+                icon: 'ic_reply',
+                inputs: [{
+                  key: 'reply_text',
+                  placeholder: 'Type a message...'
+                }]
+              }
+            ]),
             ...data,
             timestamp: new Date().toISOString()
           },
-          priority: priority === 'high' ? 'high' : 'normal'
+          priority: priority === 'high' ? 'high' : 'normal',
+          // Android specific options for rich notifications
+          android: {
+            priority: priority === 'high' ? 'high' : 'normal',
+            notification: {
+              channel_id: 'chat_messages',
+              sound: 'confirm.mp3',
+              click_action: 'OPEN_CHAT',
+              actions: [
+                {
+                  action: 'mark_read',
+                  title: 'Mark as read'
+                },
+                {
+                  action: 'reply',
+                  title: 'Reply'
+                }
+              ]
+            }
+          },
+          // Web push options
+          webpush: {
+            notification: {
+              icon: data.senderProfilePic || '/default-avatar.png',
+              badge: '/badge-icon.png',
+              actions: [
+                {
+                  action: 'mark_read',
+                  title: 'Mark as read'
+                },
+                {
+                  action: 'reply',
+                  title: 'Reply'
+                }
+              ],
+              requireInteraction: true
+            }
+          }
         };
 
         await sendPushNotification(user.fcmTokens, payload);
@@ -106,7 +168,7 @@ export const sendNotification = async ({
         }
         
         if (NOTIFICATION_FEATURES.NOTIFICATION_LOGGING) {
-          console.log(`✅ Push notification sent to user ${userId}`);
+          console.log(`✅ Enhanced push notification sent to user ${userId}`);
         }
         return { delivered: true, method: 'push' };
       }

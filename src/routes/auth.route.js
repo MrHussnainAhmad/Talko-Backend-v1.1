@@ -1,19 +1,21 @@
 import express from "express";
-import { 
-  login, 
-  logout, 
-  signup, 
+import {
+  signup,
+  login,
+  logout,
   updateProfile,
   checkAuth,
   verifyEmail,
   resendVerificationEmail,
-  deleteAccount,
   getUserProfile,
+  deleteAccount,
   blockUser,
   unblockUser,
   getBlockedUsers,
+  getLastSeen,
   checkBlockStatus,
-  getLastSeen
+  updateFcmToken,
+  removeFcmToken
 } from "../controllers/auth.controller.js";
 import { protectRoute } from "../middleware/auth.middleware.js";
 
@@ -54,5 +56,9 @@ router.get("/block-status/:userId", protectRoute, checkBlockStatus);
 
 // LAST SEEN ROUTE
 router.get("/last-seen/:userId", protectRoute, getLastSeen);
+
+// FCM TOKEN MANAGEMENT ROUTES
+router.post("/fcm/update-token", protectRoute, updateFcmToken);
+router.post("/fcm/remove-token", protectRoute, removeFcmToken);
 
 export default router;
